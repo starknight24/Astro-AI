@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { 
-  Orbit, Sparkles, Compass, ClipboardList, BookOpen, Trophy, 
-  Palette, GraduationCap, Clock, Save, Trash2, Calendar, 
-  Activity, ArrowUpRight, CheckCircle2, ChevronRight, Menu, X 
+import {
+  Orbit, Sparkles, Compass, ClipboardList, BookOpen, Trophy,
+  Palette, GraduationCap, Clock, Save, Trash2, Calendar,
+  Activity, ArrowUpRight, CheckCircle2, ChevronRight, Menu, X
 } from "lucide-react";
 
 import { AcademicLevel, SavedNote, GeneratedImage, StudentStats } from "./types";
@@ -13,6 +13,7 @@ import NasaExplorer from "./components/NasaExplorer";
 import PaperRag from "./components/PaperRag";
 import QuizMode from "./components/QuizMode";
 import SpaceArtist from "./components/SpaceArtist";
+import LandingPage from "./components/LandingPage";
 
 // Pre-seeded local bookmarks for immediate student exploration
 const INITIAL_NOTES: SavedNote[] = [
@@ -57,6 +58,9 @@ const INITIAL_IMAGES: GeneratedImage[] = [
 ];
 
 export default function App() {
+  const [showLanding, setShowLanding] = useState(true);
+  const [fadingOut, setFadingOut] = useState(false);
+
   const [degreeLevel, setDegreeLevel] = useState<AcademicLevel>("Bachelor");
   const [activeTab, setActiveTab] = useState<"tutor" | "calc" | "problems" | "nasa" | "rag" | "quiz" | "artist">("tutor");
   
@@ -147,8 +151,21 @@ export default function App() {
     }));
   }, [quizHistory]);
 
+  const handleEnterPlatform = () => {
+    setFadingOut(true);
+    setTimeout(() => setShowLanding(false), 500);
+  };
+
+  if (showLanding) {
+    return (
+      <div style={{ opacity: fadingOut ? 0 : 1, transition: "opacity 0.5s ease" }}>
+        <LandingPage onEnter={handleEnterPlatform} />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-indigo-500/30 selection:text-indigo-200">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-indigo-500/30 selection:text-indigo-200 animate-fade-in">
       
       {/* HUD Top Bar */}
       <header className="h-16 border-b border-slate-800 bg-slate-900/50 backdrop-blur-md flex items-center justify-between px-6 z-20 shrink-0">
