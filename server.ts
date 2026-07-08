@@ -7,7 +7,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
 // Enable JSON payload parsing (generous size limit for image uploads)
 app.use(express.json({ limit: "20mb" }));
@@ -475,8 +475,16 @@ Format the response strictly as a JSON object with fields:
   }
 });
 
+app.get("/health", (_req, res) => {
+  res.status(200).json({ status: "ok" });
+});
+
 // Mount Vite middleware in development, or serve built bundle in production
 async function startServer() {
+  if (process.env.NODE_ENV === "production" && !process.env.GEMINI_API_KEY) {
+    console.error("GEMINI_API_KEY is required in production.");
+    process.exit(1);
+  }
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
