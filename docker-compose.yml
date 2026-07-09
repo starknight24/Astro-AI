@@ -1,0 +1,19 @@
+services:
+  api:
+    build:
+      context: ./api
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:5173}
+    ports:
+      - "3001:3001"
+    restart: unless-stopped
+
+  science:
+    build:
+      context: ./science
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
