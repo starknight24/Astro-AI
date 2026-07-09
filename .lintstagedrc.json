@@ -1,0 +1,4 @@
+{
+  "api/**/*.ts": ["prettier --write", "eslint --fix"],
+  "web/**/*.{ts,tsx}": ["prettier --write", "eslint --fix"]
+}
