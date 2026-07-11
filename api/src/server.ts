@@ -11,6 +11,39 @@ const PORT = Number(process.env.PORT) || 3001;
 app.use(cors({ origin: process.env.WEB_ORIGIN ?? true, credentials: true }));
 app.use(express.json({ limit: "20mb" }));
 
+// ---------- Shared types & helpers ----------
+
+/** Shape of one chat-history turn sent by the frontend. */
+interface ChatHistoryItem {
+  role: "user" | "model" | string;
+  text: string;
+}
+
+/**
+ * Safely extract a human-readable message from an unknown thrown value.
+ * `unknown` forces narrowing before property access (vs `any`, which disables checks).
+ */
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return String(error);
+}
+
+/**
+ * Uniform route error handling: log the full error server-side,
+ * return only a friendly message to the client (avoids leaking internals).
+ * TODO(week2): replace ad-hoc body checks below with Zod schemas per route.
+ */
+function handleRouteError(
+  res: express.Response,
+  context: string,
+  error: unknown,
+  friendlyMessage: string,
+): void {
+  console.error(`Error in ${context}:`, error);
+  console.error(`(${context}) message:`, getErrorMessage(error));
+  res.status(500).json({ error: friendlyMessage });
+}
+
 // Initialize GoogleGenAI client lazily or safely
 let aiClient: GoogleGenAI | null = null;
 
@@ -18,7 +51,9 @@ function getAiClient(): GoogleGenAI {
   if (!aiClient) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      console.warn("GEMINI_API_KEY is not defined in environment variables. Running in fallback/simulation mode.");
+      console.warn(
+        "GEMINI_API_KEY is not defined in environment variables. Running in fallback/simulation mode.",
+      );
     }
     aiClient = new GoogleGenAI({
       apiKey: apiKey || "MOCK_KEY",
@@ -35,9 +70,22 @@ function getAiClient(): GoogleGenAI {
 // 1. Concept Explainer / Conversational AI Tutor
 app.post("/api/chat", async (req, res) => {
   try {
-    const { message, history = [], degreeLevel = "Bachelor", explainSimply = false } = req.body;
+    const {
+      message,
+      history = [],
+      degreeLevel = "Bachelor",
+      explainSimply = false,
+    } = req.body;
+
+    if (typeof message !== "string" || message.trim() === "") {
+      res
+        .status(400)
+        .json({ error: "'message' (non-empty string) is required." });
+      return;
+    }
+
     const client = getAiClient();
-    
+
     // Build context-specific system instruction
     const systemInstruction = `You are AstroAI, an expert conversational AI tutor in space engineering, astrodynamics, and astronomy.
 Your target audience ranges from undergraduate (Bachelor's) to PhD level.
@@ -47,7 +95,7 @@ Current student details:
 
 Always be encouraging, precise, and educational. When helpful, cite Kepler's Laws, Rocket Equation, or orbital mechanics parameters.`;
 
-    const chatHistory = history.map((h: any) => ({
+    const chatHistory = (history as ChatHistoryItem[]).map((h) => ({
       role: h.role === "user" ? "user" : "model",
       parts: [{ text: h.text }],
     }));
@@ -55,10 +103,7 @@ Always be encouraging, precise, and educational. When helpful, cite Kepler's Law
     // Generate content using gemini-3.5-flash as specified
     const response = await client.models.generateContent({
       model: "gemini-3.5-flash",
-      contents: [
-        ...chatHistory,
-        { role: "user", parts: [{ text: message }] }
-      ],
+      contents: [...chatHistory, { role: "user", parts: [{ text: message }] }],
       config: {
         systemInstruction,
         temperature: 0.7,
@@ -66,9 +111,13 @@ Always be encouraging, precise, and educational. When helpful, cite Kepler's Law
     });
 
     res.json({ text: response.text });
-  } catch (error: any) {
-    console.error("Error in /api/chat:", error);
-    res.status(500).json({ error: error.message || "Failed to generate AI response." });
+  } catch (error: unknown) {
+    handleRouteError(
+      res,
+      "/api/chat",
+      error,
+      "Failed to generate AI response.",
+    );
   }
 });
 
@@ -76,6 +125,14 @@ Always be encouraging, precise, and educational. When helpful, cite Kepler's Law
 app.post("/api/problems", async (req, res) => {
   try {
     const { topic, difficulty = "Intermediate", count = 3 } = req.body;
+
+    if (typeof topic !== "string" || topic.trim() === "") {
+      res
+        .status(400)
+        .json({ error: "'topic' (non-empty string) is required." });
+      return;
+    }
+
     const client = getAiClient();
 
     const prompt = `Generate exactly ${count} educational physics/astronomy problems about "${topic}" for academic level "${difficulty}".
@@ -117,16 +174,29 @@ Generate the response in valid JSON.`;
 
     const data = JSON.parse(response.text || "[]");
     res.json(data);
-  } catch (error: any) {
-    console.error("Error in /api/problems:", error);
-    res.status(500).json({ error: error.message || "Failed to generate practice problems." });
+  } catch (error: unknown) {
+    handleRouteError(
+      res,
+      "/api/problems",
+      error,
+      "Failed to generate practice problems.",
+    );
   }
 });
 
 // 3. Quiz Mode Generator
+// NOTE(scope): Quiz Mode is on the v0.1 anti-goal list — candidate for removal/branch.
 app.post("/api/quiz", async (req, res) => {
   try {
     const { topic, difficulty = "Medium" } = req.body;
+
+    if (typeof topic !== "string" || topic.trim() === "") {
+      res
+        .status(400)
+        .json({ error: "'topic' (non-empty string) is required." });
+      return;
+    }
+
     const client = getAiClient();
 
     const prompt = `Generate a high-quality 5-question multiple choice quiz on the topic "${topic}" suitable for a "${difficulty}" level space engineering student.
@@ -162,9 +232,8 @@ Format the output as a JSON array of objects, with each object containing:
 
     const quiz = JSON.parse(response.text || "[]");
     res.json(quiz);
-  } catch (error: any) {
-    console.error("Error in /api/quiz:", error);
-    res.status(500).json({ error: error.message || "Failed to generate quiz." });
+  } catch (error: unknown) {
+    handleRouteError(res, "/api/quiz", error, "Failed to generate quiz.");
   }
 });
 
@@ -172,6 +241,14 @@ Format the output as a JSON array of objects, with each object containing:
 app.post("/api/mission", async (req, res) => {
   try {
     const { missionName } = req.body;
+
+    if (typeof missionName !== "string" || missionName.trim() === "") {
+      res
+        .status(400)
+        .json({ error: "'missionName' (non-empty string) is required." });
+      return;
+    }
+
     const client = getAiClient();
 
     const prompt = `Provide a comprehensive structured breakdown of the space mission "${missionName}".
@@ -207,23 +284,43 @@ Format the response strictly as a JSON object with fields:
             discoveries: { type: Type.STRING },
             links: { type: Type.STRING },
           },
-          required: ["name", "objectives", "orbit", "challenges", "discoveries", "links"],
+          required: [
+            "name",
+            "objectives",
+            "orbit",
+            "challenges",
+            "discoveries",
+            "links",
+          ],
         },
       },
     });
 
     const missionData = JSON.parse(response.text || "{}");
     res.json(missionData);
-  } catch (error: any) {
-    console.error("Error in /api/mission:", error);
-    res.status(500).json({ error: error.message || "Failed to fetch mission breakdown." });
+  } catch (error: unknown) {
+    handleRouteError(
+      res,
+      "/api/mission",
+      error,
+      "Failed to fetch mission breakdown.",
+    );
   }
 });
 
 // 5. Research Paper Analyzer & Chat (RAG Simulator & Extraction)
+// NOTE(scope): placeholder until real RAG (pymupdf -> chunks -> pgvector) lands in Week 5.
 app.post("/api/papers/summarize", async (req, res) => {
   try {
     const { paperText, title } = req.body;
+
+    if (typeof paperText !== "string" || paperText.trim() === "") {
+      res
+        .status(400)
+        .json({ error: "'paperText' (non-empty string) is required." });
+      return;
+    }
+
     const client = getAiClient();
 
     const prompt = `You are an expert scientific paper reviewer. Summarize the following research paper context (Title: "${title || "Uploaded Document"}").
@@ -264,15 +361,33 @@ Format the response strictly as a JSON object with keys:
 
     const summary = JSON.parse(response.text || "{}");
     res.json(summary);
-  } catch (error: any) {
-    console.error("Error in /api/papers/summarize:", error);
-    res.status(500).json({ error: error.message || "Failed to summarize paper." });
+  } catch (error: unknown) {
+    handleRouteError(
+      res,
+      "/api/papers/summarize",
+      error,
+      "Failed to summarize paper.",
+    );
   }
 });
 
 app.post("/api/papers/chat", async (req, res) => {
   try {
     const { paperText, title, message, history = [] } = req.body;
+
+    if (typeof paperText !== "string" || paperText.trim() === "") {
+      res
+        .status(400)
+        .json({ error: "'paperText' (non-empty string) is required." });
+      return;
+    }
+    if (typeof message !== "string" || message.trim() === "") {
+      res
+        .status(400)
+        .json({ error: "'message' (non-empty string) is required." });
+      return;
+    }
+
     const client = getAiClient();
 
     const systemInstruction = `You are a helpful scientific peer. You are discussing the paper "${title || "the uploaded document"}" with a student.
@@ -286,17 +401,14 @@ When answering questions:
 2. Cite sections or pages if applicable (e.g., 'As discussed in the findings...', 'From the extracted methodology...').
 3. Keep mathematical notation beautifully formatted with LaTeX ($...$).`;
 
-    const chatHistory = history.map((h: any) => ({
+    const chatHistory = (history as ChatHistoryItem[]).map((h) => ({
       role: h.role === "user" ? "user" : "model",
       parts: [{ text: h.text }],
     }));
 
     const response = await client.models.generateContent({
       model: "gemini-3.5-flash",
-      contents: [
-        ...chatHistory,
-        { role: "user", parts: [{ text: message }] }
-      ],
+      contents: [...chatHistory, { role: "user", parts: [{ text: message }] }],
       config: {
         systemInstruction,
         temperature: 0.5,
@@ -304,22 +416,39 @@ When answering questions:
     });
 
     res.json({ text: response.text });
-  } catch (error: any) {
-    console.error("Error in /api/papers/chat:", error);
-    res.status(500).json({ error: error.message || "Failed to converse on paper." });
+  } catch (error: unknown) {
+    handleRouteError(
+      res,
+      "/api/papers/chat",
+      error,
+      "Failed to converse on paper.",
+    );
   }
 });
 
 // 6. High-Quality Image Generation & Creation
-// User prompt requirement:
-// - Create images using gemini-3.1-flash-image-preview (nano banana 2)
-// - Generate high-quality images using model gemini-3-pro-image-preview with size affordance (1K, 2K, 4K)
+// NOTE(scope): image generation/editing is not in the v0.1 plan (F1–F8) — candidate for removal/branch.
 app.post("/api/image/generate", async (req, res) => {
   try {
-    const { prompt, model = "gemini-3-pro-image-preview", size = "1K", aspectRatio = "1:1" } = req.body;
+    const {
+      prompt,
+      model = "gemini-3-pro-image-preview",
+      size = "1K",
+      aspectRatio = "1:1",
+    } = req.body;
+
+    if (typeof prompt !== "string" || prompt.trim() === "") {
+      res
+        .status(400)
+        .json({ error: "'prompt' (non-empty string) is required." });
+      return;
+    }
+
     const client = getAiClient();
 
-    console.log(`Generating image. Model: ${model}, Size: ${size}, Aspect Ratio: ${aspectRatio}`);
+    console.log(
+      `Generating image. Model: ${model}, Size: ${size}, Aspect Ratio: ${aspectRatio}`,
+    );
 
     // Map size to valid API values if needed
     const imageSize = size; // Supports "512px", "1K", "2K", "4K"
@@ -349,7 +478,7 @@ app.post("/api/image/generate", async (req, res) => {
     if (candidates && candidates[0]?.content?.parts) {
       for (const part of candidates[0].content.parts) {
         if (part.inlineData) {
-          base64Image = part.inlineData.data;
+          base64Image = part.inlineData.data ?? "";
         } else if (part.text) {
           extractedText += part.text;
         }
@@ -357,21 +486,45 @@ app.post("/api/image/generate", async (req, res) => {
     }
 
     if (base64Image) {
-      res.json({ imageUrl: `data:image/png;base64,${base64Image}`, info: extractedText });
+      res.json({
+        imageUrl: `data:image/png;base64,${base64Image}`,
+        info: extractedText,
+      });
     } else {
-      res.status(400).json({ error: "The model did not return an image part. Refined your prompt or try again." });
+      res.status(400).json({
+        error:
+          "The model did not return an image part. Refine your prompt or try again.",
+      });
     }
-  } catch (error: any) {
-    console.error("Error in /api/image/generate:", error);
-    res.status(500).json({ error: error.message || "Failed to generate cosmic image. Please verify your billing status/API settings." });
+  } catch (error: unknown) {
+    handleRouteError(
+      res,
+      "/api/image/generate",
+      error,
+      "Failed to generate cosmic image. Please verify your billing status/API settings.",
+    );
   }
 });
 
 // 7. Image Editing
-// User prompt requirement: "Add functionality to the app for users to use text prompts to create or edit images using gemini-3.1-flash-image-preview."
+// NOTE(scope): see note on /api/image/generate.
 app.post("/api/image/edit", async (req, res) => {
   try {
     const { base64Image, prompt, mimeType = "image/png" } = req.body;
+
+    if (typeof base64Image !== "string" || base64Image.trim() === "") {
+      res
+        .status(400)
+        .json({ error: "'base64Image' (non-empty string) is required." });
+      return;
+    }
+    if (typeof prompt !== "string" || prompt.trim() === "") {
+      res
+        .status(400)
+        .json({ error: "'prompt' (non-empty string) is required." });
+      return;
+    }
+
     const client = getAiClient();
 
     // Clean up base64 prefix if present
@@ -401,7 +554,7 @@ app.post("/api/image/edit", async (req, res) => {
     if (candidates && candidates[0]?.content?.parts) {
       for (const part of candidates[0].content.parts) {
         if (part.inlineData) {
-          outputBase64 = part.inlineData.data;
+          outputBase64 = part.inlineData.data ?? "";
         } else if (part.text) {
           descriptionText += part.text;
         }
@@ -409,20 +562,35 @@ app.post("/api/image/edit", async (req, res) => {
     }
 
     if (outputBase64) {
-      res.json({ imageUrl: `data:image/png;base64,${outputBase64}`, info: descriptionText });
+      res.json({
+        imageUrl: `data:image/png;base64,${outputBase64}`,
+        info: descriptionText,
+      });
     } else {
-      res.status(400).json({ error: "Image editing model did not return modified image bytes." });
+      res
+        .status(400)
+        .json({
+          error: "Image editing model did not return modified image bytes.",
+        });
     }
-  } catch (error: any) {
-    console.error("Error in /api/image/edit:", error);
-    res.status(500).json({ error: error.message || "Failed to edit image." });
+  } catch (error: unknown) {
+    handleRouteError(res, "/api/image/edit", error, "Failed to edit image.");
   }
 });
 
 // 8. Space Problem Solver (word problems / formula diagnostics)
+// NOTE(week4): becomes the real agent (tool use -> science service) per the plan.
 app.post("/api/solve", async (req, res) => {
   try {
     const { wordProblem } = req.body;
+
+    if (typeof wordProblem !== "string" || wordProblem.trim() === "") {
+      res
+        .status(400)
+        .json({ error: "'wordProblem' (non-empty string) is required." });
+      return;
+    }
+
     const client = getAiClient();
 
     const prompt = `Analyze the following orbital mechanics or astronomy physics problem:
@@ -461,16 +629,22 @@ Format the response strictly as a JSON object with fields:
             finalAnswer: { type: Type.STRING },
             similarProblem: { type: Type.STRING },
           },
-          required: ["problemType", "parameters", "recommendedFormula", "stepByStep", "finalAnswer", "similarProblem"],
+          required: [
+            "problemType",
+            "parameters",
+            "recommendedFormula",
+            "stepByStep",
+            "finalAnswer",
+            "similarProblem",
+          ],
         },
       },
     });
 
     const parsed = JSON.parse(response.text || "{}");
     res.json(parsed);
-  } catch (error: any) {
-    console.error("Error in /api/solve:", error);
-    res.status(500).json({ error: error.message || "Failed to solve problem." });
+  } catch (error: unknown) {
+    handleRouteError(res, "/api/solve", error, "Failed to solve problem.");
   }
 });
 
