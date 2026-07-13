@@ -1,28 +1,62 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Send, Sparkles, Copy, Check, RotateCcw, Brain, BookOpen, GraduationCap, ChevronRight } from "lucide-react";
+import {
+  Send,
+  Sparkles,
+  Copy,
+  Check,
+  RotateCcw,
+  Brain,
+  BookOpen,
+  GraduationCap,
+  ChevronRight,
+} from "lucide-react";
 import { ChatMessage, AcademicLevel } from "../types";
+import { API_URL } from "../lib/api";
 
 interface ConceptExplainerProps {
   degreeLevel: AcademicLevel;
   setDegreeLevel: (level: AcademicLevel) => void;
-  onActivityAdded: (type: "chat" | "problem" | "calculator" | "quiz" | "image", desc: string) => void;
+  onActivityAdded: (
+    type: "chat" | "problem" | "calculator" | "quiz" | "image",
+    desc: string,
+  ) => void;
 }
 
 const PRESET_TOPICS = [
-  { title: "Kepler's Laws of Planetary Motion", query: "Explain Kepler's Three Laws of Planetary Motion with their respective mathematical equations and derivation." },
-  { title: "Tsiolkovsky Rocket Equation", query: "Explain the Tsiolkovsky Rocket Equation, its derivation, and how Delta-v relates to structural mass and exhaust velocity." },
-  { title: "Hohmann Transfer Trajectories", query: "What is a Hohmann Transfer? Explain the double-impulse burn sequence and how we calculate the total delta-V requirement." },
-  { title: "Lagrange Equilibrium Points", query: "Explain the physics of Lagrange points (L1 through L5) for the Sun-Earth-Moon system. Why is L2 ideal for space telescopes?" },
+  {
+    title: "Kepler's Laws of Planetary Motion",
+    query:
+      "Explain Kepler's Three Laws of Planetary Motion with their respective mathematical equations and derivation.",
+  },
+  {
+    title: "Tsiolkovsky Rocket Equation",
+    query:
+      "Explain the Tsiolkovsky Rocket Equation, its derivation, and how Delta-v relates to structural mass and exhaust velocity.",
+  },
+  {
+    title: "Hohmann Transfer Trajectories",
+    query:
+      "What is a Hohmann Transfer? Explain the double-impulse burn sequence and how we calculate the total delta-V requirement.",
+  },
+  {
+    title: "Lagrange Equilibrium Points",
+    query:
+      "Explain the physics of Lagrange points (L1 through L5) for the Sun-Earth-Moon system. Why is L2 ideal for space telescopes?",
+  },
 ];
 
-export default function ConceptExplainer({ degreeLevel, setDegreeLevel, onActivityAdded }: ConceptExplainerProps) {
+export default function ConceptExplainer({
+  degreeLevel,
+  setDegreeLevel,
+  onActivityAdded,
+}: ConceptExplainerProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "welcome",
       role: "model",
       text: "Greetings, Commander! I am AstroAI, your specialized orbital mechanics and space engineering academic tutor. Ask me any question about astrophysics, spacecraft design, launch trajectories, or satellite constellations.",
-      timestamp: new Date()
-    }
+      timestamp: new Date(),
+    },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -42,25 +76,28 @@ export default function ConceptExplainer({ degreeLevel, setDegreeLevel, onActivi
     if (!textToSend) setInput("");
 
     const userMessage: ChatMessage = {
+      // eslint-disable-next-line react-hooks/purity -- inside event handler, not render
       id: Date.now().toString(),
       role: "user",
       text: queryText,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
     setMessages((prev) => [...prev, userMessage]);
     setLoading(true);
 
     try {
-      const response = await fetch("/api/chat", {
+      const response = await fetch(`${API_URL}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: queryText,
-          history: messages.slice(-10).map((m) => ({ role: m.role, text: m.text })),
+          history: messages
+            .slice(-10)
+            .map((m) => ({ role: m.role, text: m.text })),
           degreeLevel,
-          explainSimply
-        })
+          explainSimply,
+        }),
       });
 
       const data = await response.json();
@@ -72,20 +109,24 @@ export default function ConceptExplainer({ degreeLevel, setDegreeLevel, onActivi
           id: (Date.now() + 1).toString(),
           role: "model",
           text: data.text,
-          timestamp: new Date()
-        }
+          timestamp: new Date(),
+        },
       ]);
 
       onActivityAdded("chat", `Asked: "${queryText.substring(0, 30)}..."`);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Failed to reach AstroAI backend. Please check your Gemini credentials.";
       setMessages((prev) => [
         ...prev,
         {
           id: (Date.now() + 1).toString(),
           role: "model",
-          text: `⚠️ **System Error**: ${err.message || "Failed to reach AstroAI backend. Please check your Gemini credentials."}`,
-          timestamp: new Date()
-        }
+          text: `⚠️ **System Error**: ${message}`,
+          timestamp: new Date(),
+        },
       ]);
     } finally {
       setLoading(false);
@@ -104,8 +145,8 @@ export default function ConceptExplainer({ degreeLevel, setDegreeLevel, onActivi
         id: "welcome",
         role: "model",
         text: "System Reset. Ready for new space science queries, Commander. Specify academic level and ask away!",
-        timestamp: new Date()
-      }
+        timestamp: new Date(),
+      },
     ]);
   };
 
@@ -117,12 +158,15 @@ export default function ConceptExplainer({ degreeLevel, setDegreeLevel, onActivi
       if (block.startsWith("$$") && block.endsWith("$$")) {
         const eq = block.slice(2, -2);
         return (
-          <div key={idx} className="my-3 p-3 bg-slate-900/80 border border-emerald-500/30 rounded-lg font-mono text-emerald-400 overflow-x-auto text-center shadow-inner">
+          <div
+            key={idx}
+            className="my-3 p-3 bg-slate-900/80 border border-emerald-500/30 rounded-lg font-mono text-emerald-400 overflow-x-auto text-center shadow-inner"
+          >
             {eq}
           </div>
         );
       }
-      
+
       const inlines = block.split(/(\$.*?\$)/g);
       return (
         <span key={idx}>
@@ -130,7 +174,10 @@ export default function ConceptExplainer({ degreeLevel, setDegreeLevel, onActivi
             if (sub.startsWith("$") && sub.endsWith("$")) {
               const eq = sub.slice(1, -1);
               return (
-                <code key={sIdx} className="px-1.5 py-0.5 mx-0.5 bg-slate-900 border border-cyan-500/20 text-cyan-400 rounded font-mono text-sm">
+                <code
+                  key={sIdx}
+                  className="px-1.5 py-0.5 mx-0.5 bg-slate-900 border border-cyan-500/20 text-cyan-400 rounded font-mono text-sm"
+                >
                   {eq}
                 </code>
               );
@@ -151,8 +198,12 @@ export default function ConceptExplainer({ degreeLevel, setDegreeLevel, onActivi
             <GraduationCap className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="font-display font-semibold text-lg text-white">Academic Concept Explainer</h2>
-            <p className="text-xs text-slate-400">Conversational STEM tutor for advanced space engineering topics</p>
+            <h2 className="font-display font-semibold text-lg text-white">
+              Academic Concept Explainer
+            </h2>
+            <p className="text-xs text-slate-400">
+              Conversational STEM tutor for advanced space engineering topics
+            </p>
           </div>
         </div>
 
@@ -205,7 +256,9 @@ export default function ConceptExplainer({ degreeLevel, setDegreeLevel, onActivi
         <div className="hidden lg:flex flex-col w-72 border-r border-slate-800 bg-slate-950/40 p-4 overflow-y-auto">
           <div className="flex items-center gap-2 mb-3">
             <BookOpen className="w-4 h-4 text-indigo-400" />
-            <h3 className="font-display font-medium text-xs text-indigo-300 uppercase tracking-wider">Quick Lesson Topics</h3>
+            <h3 className="font-display font-medium text-xs text-indigo-300 uppercase tracking-wider">
+              Quick Lesson Topics
+            </h3>
           </div>
           <div className="space-y-2.5">
             {PRESET_TOPICS.map((topic, idx) => (
@@ -217,7 +270,9 @@ export default function ConceptExplainer({ degreeLevel, setDegreeLevel, onActivi
               >
                 <div className="flex items-start gap-2">
                   <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-indigo-400 mt-0.5 shrink-0 transition-colors" />
-                  <span className="font-medium group-hover:text-white transition-colors">{topic.title}</span>
+                  <span className="font-medium group-hover:text-white transition-colors">
+                    {topic.title}
+                  </span>
                 </div>
               </button>
             ))}
@@ -237,7 +292,7 @@ export default function ConceptExplainer({ degreeLevel, setDegreeLevel, onActivi
                     <Sparkles className="w-4 h-4 text-indigo-400 animate-pulse" />
                   </div>
                 )}
-                
+
                 <div
                   className={`relative p-4 rounded-2xl border transition-all ${
                     msg.role === "user"
@@ -246,9 +301,13 @@ export default function ConceptExplainer({ degreeLevel, setDegreeLevel, onActivi
                   }`}
                 >
                   <p className="text-xs font-mono text-slate-500 mb-1">
-                    {msg.role === "user" ? "Student" : "AstroAI Tutor"} • {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {msg.role === "user" ? "Student" : "AstroAI Tutor"} •{" "}
+                    {new Date(msg.timestamp).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </p>
-                  
+
                   <div className="whitespace-pre-wrap leading-relaxed text-sm">
                     {renderFormattedText(msg.text)}
                   </div>
@@ -270,12 +329,14 @@ export default function ConceptExplainer({ degreeLevel, setDegreeLevel, onActivi
 
                 {msg.role === "user" && (
                   <div className="w-8 h-8 rounded-full bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center shrink-0">
-                    <span className="text-xs font-semibold text-indigo-300">{degreeLevel[0]}</span>
+                    <span className="text-xs font-semibold text-indigo-300">
+                      {degreeLevel[0]}
+                    </span>
                   </div>
                 )}
               </div>
             ))}
-            
+
             {loading && (
               <div className="flex gap-4 max-w-lg mr-auto">
                 <div className="w-8 h-8 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0">
@@ -283,11 +344,22 @@ export default function ConceptExplainer({ degreeLevel, setDegreeLevel, onActivi
                 </div>
                 <div className="p-4 bg-slate-900/60 border border-slate-800/80 rounded-2xl rounded-tl-none">
                   <div className="flex items-center gap-1">
-                    <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                    <span
+                      className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"
+                      style={{ animationDelay: "0ms" }}
+                    />
+                    <span
+                      className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"
+                      style={{ animationDelay: "150ms" }}
+                    />
+                    <span
+                      className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"
+                      style={{ animationDelay: "300ms" }}
+                    />
                   </div>
-                  <p className="text-xs text-slate-500 mt-1 font-mono">Synthesizing textbook equations...</p>
+                  <p className="text-xs text-slate-500 mt-1 font-mono">
+                    Synthesizing textbook equations...
+                  </p>
                 </div>
               </div>
             )}
