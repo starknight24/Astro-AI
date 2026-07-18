@@ -1,6 +1,0 @@
-{
-  "name": "AstroAI",
-  "description": "AI-powered learning platform for space engineering and astronomy students, featuring a concept explainer, practice problem generator, orbital simulator, paper summarizer, and AI space artist.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
