@@ -14,9 +14,11 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
+    if (!rootRef.current || !canvasRef.current) return;
+    // Bind after the guard so the consts are non-null even inside the hoisted
+    // function declarations below, which TS excludes from outer narrowing.
     const root = rootRef.current;
     const canvas = canvasRef.current;
-    if (!root || !canvas) return;
     const scrollEl = root.querySelector<HTMLElement>("[data-scroll]");
     if (!scrollEl) return;
 
