@@ -10,7 +10,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { PracticeProblem } from "../types";
-import { API_URL } from "../lib/api";
+import { apiFetch } from "../lib/api";
 
 interface ProblemGeneratorProps {
   onActivityAdded: (
@@ -58,9 +58,8 @@ export default function ProblemGenerator({
     setLoading(true);
     try {
       const selectedTopic = customTopic.trim() || topic;
-      const response = await fetch(`${API_URL}/api/problems`, {
+      const response = await apiFetch(`/api/problems`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ topic: selectedTopic, difficulty, count: 2 }),
       });
       const data = await response.json();
@@ -85,9 +84,8 @@ export default function ProblemGenerator({
     if (!wordProblem.trim() || solving) return;
     setSolving(true);
     try {
-      const response = await fetch(`${API_URL}/api/solve`, {
+      const response = await apiFetch(`/api/solve`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ wordProblem }),
       });
       const data = await response.json();

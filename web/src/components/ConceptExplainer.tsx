@@ -11,7 +11,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { ChatMessage, AcademicLevel } from "../types";
-import { API_URL } from "../lib/api";
+import { apiFetch } from "../lib/api";
 
 interface ConceptExplainerProps {
   degreeLevel: AcademicLevel;
@@ -87,9 +87,8 @@ export default function ConceptExplainer({
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/chat`, {
+      const response = await apiFetch(`/api/chat`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: queryText,
           history: messages

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Upload, BookOpen, Brain, Send, Loader2, Sparkles } from "lucide-react";
 import { ResearchPaper, ChatMessage } from "../types";
-import { API_URL } from "../lib/api";
+import { apiFetch } from "../lib/api";
 
 interface PaperRagProps {
   onActivityAdded: (
@@ -147,9 +147,8 @@ export default function PaperRag({ onActivityAdded }: PaperRagProps) {
           `This is parsed research data about space engineering on file ${file.name}`;
 
         // Let's call the backend to summarize this paper using real Gemini API!
-        const response = await fetch(`${API_URL}/api/papers/summarize`, {
+        const response = await apiFetch(`/api/papers/summarize`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ paperText: text, title: file.name }),
         });
         const summary = await response.json();
@@ -207,9 +206,8 @@ export default function PaperRag({ onActivityAdded }: PaperRagProps) {
     setChatLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/papers/chat`, {
+      const response = await apiFetch(`/api/papers/chat`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           paperText:
             selectedPaper.contentSnippet + " " + (selectedPaper.abstract || ""),

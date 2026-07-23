@@ -10,6 +10,7 @@ import {
   Activity,
   Menu,
   X,
+  LogOut,
 } from "lucide-react";
 
 import { AcademicLevel, SavedNote, StudentStats } from "./types";
@@ -19,6 +20,7 @@ import ProblemGenerator from "./components/ProblemGenerator";
 import NasaExplorer from "./components/NasaExplorer";
 import PaperRag from "./components/PaperRag";
 import LandingPage from "./components/LandingPage";
+import { useAuth } from "./lib/AuthContext";
 
 // Pre-seeded local bookmarks for immediate student exploration
 const INITIAL_NOTES: SavedNote[] = [
@@ -41,6 +43,7 @@ const INITIAL_NOTES: SavedNote[] = [
 ];
 
 export default function App() {
+  const { user, signOut } = useAuth();
   const [showLanding, setShowLanding] = useState(true);
   const [fadingOut, setFadingOut] = useState(false);
 
@@ -193,6 +196,14 @@ export default function App() {
             <Clock className="w-4 h-4 text-indigo-400" />
             <span>UTC: {time.toISOString().substring(11, 19)}</span>
           </div>
+          <button
+            onClick={() => signOut()}
+            title={user?.email ?? "Sign out"}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white transition-all"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">Sign out</span>
+          </button>
         </div>
       </header>
 

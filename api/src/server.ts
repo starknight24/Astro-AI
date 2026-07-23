@@ -2,6 +2,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
 import { GoogleGenAI, Type } from "@google/genai";
+import { requireAuth } from "./middleware/auth";
 
 dotenv.config();
 
@@ -10,6 +11,12 @@ const PORT = Number(process.env.PORT) || 3001;
 
 app.use(cors({ origin: process.env.WEB_ORIGIN ?? true, credentials: true }));
 app.use(express.json({ limit: "20mb" }));
+
+app.get("/", (_req, res) => {
+  res.status(200).json({ service: "AstroAI API" });
+});
+
+app.use("/api", requireAuth);
 
 // ---------- Shared types & helpers ----------
 
@@ -567,11 +574,9 @@ app.post("/api/image/edit", async (req, res) => {
         info: descriptionText,
       });
     } else {
-      res
-        .status(400)
-        .json({
-          error: "Image editing model did not return modified image bytes.",
-        });
+      res.status(400).json({
+        error: "Image editing model did not return modified image bytes.",
+      });
     }
   } catch (error: unknown) {
     handleRouteError(res, "/api/image/edit", error, "Failed to edit image.");
