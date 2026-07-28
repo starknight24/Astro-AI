@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Orbit,
   Play,
@@ -7,7 +7,10 @@ import {
   Save,
   Flame,
   Compass,
+  AlertTriangle,
+  Loader2,
 } from "lucide-react";
+import { apiFetch } from "../lib/api";
 
 interface OrbitalCalculatorProps {
   onActivityAdded: (
@@ -21,36 +24,98 @@ interface OrbitalCalculatorProps {
   }) => void;
 }
 
-type CentralBody = "Earth" | "Mars" | "Moon";
-
-interface BodyData {
-  mass: number; // kg
-  radius: number; // km
-  mu: number; // km^3/s^2 (gravitational parameter)
-  color: string;
+interface PeriodResult {
+  period_s: number;
+  period_min: number;
+  semi_major_axis_km: number;
+  formula: string;
+}
+interface VelocityResult {
+  velocity_kms: number;
+  velocity_kmh: number;
+  semi_major_axis_km: number;
+  formula: string;
+}
+interface EscapeResult {
+  escape_velocity_kms: number;
+  escape_velocity_kmh: number;
+  semi_major_axis_km: number;
+  formula: string;
+}
+interface EnergyResult {
+  specific_energy_kms2: number;
+  specific_energy_kmh2: number;
+  semi_major_axis_km: number;
+  formula: string;
+}
+interface HohmannResult {
+  delta_v1_kms: number;
+  delta_v2_kms: number;
+  transfer_time_s: number;
+  transfer_time_min: number;
+  initial_radius_km: number;
+  final_radius_km: number;
+  dv_total_kms: number;
+  formula_delta_v1: string;
+  formula_delta_v2: string;
+  formula_transfer_time: string;
+}
+interface CircularData {
+  period: PeriodResult;
+  velocity: VelocityResult;
+  escape: EscapeResult;
+  energy: EnergyResult;
 }
 
-const BODIES: Record<CentralBody, BodyData> = {
-  Earth: { mass: 5.972e24, radius: 6371, mu: 398600.4, color: "#38bdf8" },
-  Mars: { mass: 6.39e23, radius: 3389, mu: 42828.3, color: "#f87171" },
-  Moon: { mass: 7.347e22, radius: 1737, mu: 4902.8, color: "#94a3b8" },
-};
+// Earth constants — used only for SVG scaling placeholders; all displayed
+// physics values are sourced from the science service response.
+const EARTH_RADIUS_KM = 6378.137;
+const DEBOUNCE_MS = 300;
+
+async function callScience<T>(
+  path: string,
+  body: unknown,
+  signal: AbortSignal,
+): Promise<T> {
+  const res = await apiFetch(path, {
+    method: "POST",
+    body: JSON.stringify(body),
+    signal,
+  });
+  if (res.status === 422) {
+    let detail = "Invalid input.";
+    try {
+      const j = (await res.json()) as { detail?: unknown };
+      if (typeof j.detail === "string") detail = j.detail;
+    } catch {
+      /* keep default */
+    }
+    throw new Error(detail);
+  }
+  if (!res.ok) {
+    throw new Error(`Request failed (${res.status})`);
+  }
+  return (await res.json()) as T;
+}
 
 export default function OrbitalCalculator({
   onActivityAdded,
   onSaveNote,
 }: OrbitalCalculatorProps) {
-  // Circular Orbit Inputs
-  const [body, setBody] = useState<CentralBody>("Earth");
-  const [altitude, setAltitude] = useState<number>(400); // LEO default
-
-  // Hohmann Transfer Inputs
+  const [altitude, setAltitude] = useState<number>(400);
   const [depAltitude, setDepAltitude] = useState<number>(300);
-  const [arrAltitude, setArrAltitude] = useState<number>(35786); // GEO default
+  const [arrAltitude, setArrAltitude] = useState<number>(35786);
 
-  // Simulation controls
+  const [circular, setCircular] = useState<CircularData | null>(null);
+  const [circularLoading, setCircularLoading] = useState<boolean>(false);
+  const [circularError, setCircularError] = useState<string | null>(null);
+
+  const [hohmann, setHohmann] = useState<HohmannResult | null>(null);
+  const [hohmannLoading, setHohmannLoading] = useState<boolean>(false);
+  const [hohmannError, setHohmannError] = useState<string | null>(null);
+
   const [isPlaying, setIsPlaying] = useState<boolean>(true);
-  const [simSpeed, setSimSpeed] = useState<number>(100); // speed multiplier
+  const [simSpeed, setSimSpeed] = useState<number>(100);
   const [isHohmannAnimating, setIsHohmannAnimating] = useState<boolean>(false);
   const [hohmannPhase, setHohmannPhase] = useState<
     "idle" | "burn1" | "coasting" | "burn2" | "circular"
@@ -62,62 +127,106 @@ export default function OrbitalCalculator({
   const [simAngle, setSimAngle] = useState<number>(0);
   const [hohmannSimAngle, setHohmannSimAngle] = useState<number>(0);
 
-  // Calculate Circular Orbit Parameters
-  const bodyData = BODIES[body];
-  const r = bodyData.radius + altitude; // Semi-major axis in km
-  const v_c = Math.sqrt(bodyData.mu / r); // km/s
-  const escape_v = Math.sqrt((2 * bodyData.mu) / r); // km/s
-  const period_sec = 2 * Math.PI * Math.sqrt(Math.pow(r, 3) / bodyData.mu); // seconds
-  const period_min = period_sec / 60;
-  const spec_energy = -bodyData.mu / (2 * r); // MJ/kg
+  // ---------- Debounced backend calls: circular orbit ----------
+  useEffect(() => {
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      setCircularLoading(true);
+      setCircularError(null);
+      try {
+        const period = await callScience<PeriodResult>(
+          "/api/calculate/period",
+          { altitude_km: altitude },
+          controller.signal,
+        );
+        const [velocity, escape, energy] = await Promise.all([
+          callScience<VelocityResult>(
+            "/api/calculate/velocity",
+            { altitude_km: altitude },
+            controller.signal,
+          ),
+          callScience<EscapeResult>(
+            "/api/calculate/escape-velocity",
+            { altitude_km: altitude },
+            controller.signal,
+          ),
+          callScience<EnergyResult>(
+            "/api/calculate/energy",
+            { semi_major_axis_km: period.semi_major_axis_km },
+            controller.signal,
+          ),
+        ]);
+        setCircular({ period, velocity, escape, energy });
+      } catch (err) {
+        if ((err as Error).name === "AbortError") return;
+        setCircular(null);
+        setCircularError((err as Error).message);
+      } finally {
+        setCircularLoading(false);
+      }
+    }, DEBOUNCE_MS);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [altitude]);
 
-  // Calculate Hohmann Transfer parameters
-  const r1 = bodyData.radius + depAltitude;
-  const r2 = bodyData.radius + arrAltitude;
-  const a_tx = (r1 + r2) / 2;
-  const v_c1 = Math.sqrt(bodyData.mu / r1);
-  const v_c2 = Math.sqrt(bodyData.mu / r2);
-  const v_tx1 = Math.sqrt(bodyData.mu * (2 / r1 - 1 / a_tx));
-  const delta_v1 = Math.abs(v_tx1 - v_c1);
-  const v_tx2 = Math.sqrt(bodyData.mu * (2 / r2 - 1 / a_tx));
-  const delta_v2 = Math.abs(v_c2 - v_tx2);
-  const total_delta_v = delta_v1 + delta_v2;
-  const tof_sec = Math.PI * Math.sqrt(Math.pow(a_tx, 3) / bodyData.mu);
+  // ---------- Debounced backend calls: Hohmann transfer ----------
+  useEffect(() => {
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      setHohmannLoading(true);
+      setHohmannError(null);
+      try {
+        const r = await callScience<HohmannResult>(
+          "/api/calculate/hohmann",
+          { alt1_km: depAltitude, alt2_km: arrAltitude },
+          controller.signal,
+        );
+        setHohmann(r);
+      } catch (err) {
+        if ((err as Error).name === "AbortError") return;
+        setHohmann(null);
+        setHohmannError((err as Error).message);
+      } finally {
+        setHohmannLoading(false);
+      }
+    }, DEBOUNCE_MS);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [depAltitude, arrAltitude]);
 
-  // Animation ticks
+  // ---------- Animation ----------
+  const periodSecForAnim = circular?.period.period_s ?? 5554;
+  const tofSecForAnim = hohmann?.transfer_time_s ?? 18989;
+
   useEffect(() => {
     let frameId: number;
     const tick = () => {
       if (isPlaying) {
-        // Calculate step based on orbital period (faster orbits rotate faster)
-        const angularVelocity = (2 * Math.PI) / (period_sec || 5400); // rad/sec
-        const step = angularVelocity * (simSpeed / 60) * 1.5; // rad per frame
-
+        const angularVelocity = (2 * Math.PI) / periodSecForAnim;
+        const step = angularVelocity * (simSpeed / 60) * 1.5;
         angleRef.current = (angleRef.current + step) % (2 * Math.PI);
         setSimAngle(angleRef.current);
 
         if (isHohmannAnimating) {
           if (hohmannPhase === "coasting") {
-            // Speed of coasting transfer
             const hohmannTofMultiplier =
-              (Math.PI / tof_sec) * (simSpeed / 60) * 3;
+              (Math.PI / tofSecForAnim) * (simSpeed / 60) * 3;
             hohmannAngleRef.current =
               hohmannAngleRef.current + hohmannTofMultiplier;
-
             if (hohmannAngleRef.current >= Math.PI) {
               hohmannAngleRef.current = Math.PI;
               setHohmannPhase("burn2");
-              setTimeout(() => {
-                setHohmannPhase("circular");
-              }, 1200);
+              setTimeout(() => setHohmannPhase("circular"), 1200);
             }
             setHohmannSimAngle(hohmannAngleRef.current);
             setHohmannTimeLeft((prev) => Math.max(0, prev - simSpeed / 30));
           } else if (hohmannPhase === "circular") {
-            const circVelocity =
-              (2 * Math.PI) /
-              (2 * Math.PI * Math.sqrt(Math.pow(r2, 3) / bodyData.mu));
-            const circStep = circVelocity * (simSpeed / 60) * 1.5;
+            // Decorative constant rotation on target orbit — not physics.
+            const circStep = 0.02 * (simSpeed / 60) * 1.5;
             hohmannAngleRef.current =
               (hohmannAngleRef.current + circStep) % (2 * Math.PI);
             setHohmannSimAngle(hohmannAngleRef.current);
@@ -131,15 +240,14 @@ export default function OrbitalCalculator({
   }, [
     isPlaying,
     simSpeed,
-    period_sec,
+    periodSecForAnim,
     isHohmannAnimating,
     hohmannPhase,
-    tof_sec,
-    r2,
-    bodyData.mu,
+    tofSecForAnim,
   ]);
 
   const handleStartHohmannTransfer = () => {
+    if (!hohmann) return;
     onActivityAdded(
       "calculator",
       `Hohmann Transfer Simulated: ${depAltitude}km to ${arrAltitude}km`,
@@ -148,11 +256,8 @@ export default function OrbitalCalculator({
     setHohmannPhase("burn1");
     hohmannAngleRef.current = 0;
     setHohmannSimAngle(0);
-    setHohmannTimeLeft(tof_sec);
-
-    setTimeout(() => {
-      setHohmannPhase("coasting");
-    }, 1500);
+    setHohmannTimeLeft(hohmann.transfer_time_s);
+    setTimeout(() => setHohmannPhase("coasting"), 1500);
   };
 
   const handleStopHohmannTransfer = () => {
@@ -162,65 +267,73 @@ export default function OrbitalCalculator({
   };
 
   const saveCircularNotes = () => {
-    const title = `${body} Circular Orbit (${altitude} km)`;
-    const content = `Central Body: ${body}
-Radius of Body: ${bodyData.radius} km
+    if (!circular) return;
+    const { period, velocity, escape, energy } = circular;
+    const title = `Earth Circular Orbit (${altitude} km)`;
+    const content = `Central Body: Earth
 Altitude: ${altitude} km
-Semi-Major Axis (r): ${r.toFixed(2)} km
-Calculated Speed (v_c): ${v_c.toFixed(4)} km/s
-Formula: v_c = sqrt(mu / r) = sqrt(${bodyData.mu} / ${r.toFixed(2)})
-Escape Velocity (v_e): ${escape_v.toFixed(4)} km/s
-Orbital Period (T): ${period_min.toFixed(2)} minutes (${(period_min / 60).toFixed(2)} hours)
-Specific Orbital Energy: ${spec_energy.toFixed(2)} MJ/kg`;
+Semi-Major Axis (a): ${period.semi_major_axis_km.toFixed(2)} km
 
+Orbital Velocity (${velocity.formula}): ${velocity.velocity_kms.toFixed(4)} km/s
+Escape Velocity (${escape.formula}): ${escape.escape_velocity_kms.toFixed(4)} km/s
+Orbital Period (${period.formula}): ${period.period_s.toFixed(2)} s (${period.period_min.toFixed(2)} min)
+Specific Orbital Energy (${energy.formula}): ${energy.specific_energy_kms2.toFixed(4)} km²/s²`;
     onSaveNote({ type: "calculation", title, content });
     onActivityAdded("calculator", `Saved Orbit Parameters to Notes: ${title}`);
   };
 
   const saveHohmannNotes = () => {
-    const title = `${body} Hohmann Transfer (${depAltitude}km -> ${arrAltitude}km)`;
-    const content = `Central Body: ${body}
-Departure Altitude: ${depAltitude} km (r1 = ${r1.toFixed(2)} km)
-Arrival Altitude: ${arrAltitude} km (r2 = ${r2.toFixed(2)} km)
-Total Delta-V required: ${total_delta_v.toFixed(4)} km/s
-- Delta-V1 (Departure Burn): ${delta_v1.toFixed(4)} km/s
-- Delta-V2 (Arrival Circularization): ${delta_v2.toFixed(4)} km/s
-Transfer Semi-major Axis: ${a_tx.toFixed(2)} km
-Time of Flight: ${(tof_sec / 3600).toFixed(2)} hours (${(tof_sec / 60).toFixed(1)} mins)`;
+    if (!hohmann) return;
+    const title = `Earth Hohmann Transfer (${depAltitude}km -> ${arrAltitude}km)`;
+    const content = `Central Body: Earth
+Departure Altitude: ${depAltitude} km (r1 = ${hohmann.initial_radius_km.toFixed(2)} km)
+Arrival Altitude: ${arrAltitude} km (r2 = ${hohmann.final_radius_km.toFixed(2)} km)
 
+${hohmann.formula_delta_v1}
+  Δv1 = ${hohmann.delta_v1_kms.toFixed(4)} km/s
+
+${hohmann.formula_delta_v2}
+  Δv2 = ${hohmann.delta_v2_kms.toFixed(4)} km/s
+
+Total Δv = ${hohmann.dv_total_kms.toFixed(4)} km/s
+
+${hohmann.formula_transfer_time}
+  T = ${hohmann.transfer_time_s.toFixed(2)} s (${(hohmann.transfer_time_s / 3600).toFixed(2)} h)`;
     onSaveNote({ type: "calculation", title, content });
     onActivityAdded("calculator", `Saved Hohmann calculation to Notes`);
   };
 
-  // Convert orbit dimensions to fitting SVG sizes (scaling factors)
-  const maxSimRadius = Math.max(r, r2);
-  const scaleRatio = 110 / maxSimRadius; // scale down to fit 300x300 viewBox
+  // ---------- SVG scaling (visual only) ----------
+  const rForScale =
+    circular?.period.semi_major_axis_km ?? EARTH_RADIUS_KM + altitude;
+  const r1ForScale =
+    hohmann?.initial_radius_km ?? EARTH_RADIUS_KM + depAltitude;
+  const r2ForScale = hohmann?.final_radius_km ?? EARTH_RADIUS_KM + arrAltitude;
+  const maxSimRadius = Math.max(rForScale, r2ForScale);
+  const scaleRatio = 110 / maxSimRadius;
+  const planetSvgRadius = Math.max(10, EARTH_RADIUS_KM * scaleRatio);
+  const orbitSvgRadius = rForScale * scaleRatio;
+  const depSvgRadius = r1ForScale * scaleRatio;
+  const arrSvgRadius = r2ForScale * scaleRatio;
 
-  const planetSvgRadius = Math.max(10, bodyData.radius * scaleRatio);
-  const orbitSvgRadius = r * scaleRatio;
-  const depSvgRadius = r1 * scaleRatio;
-  const arrSvgRadius = r2 * scaleRatio;
-
-  // Satellite position calculations
   const satX = 150 + Math.cos(simAngle) * orbitSvgRadius;
   const satY = 150 + Math.sin(simAngle) * orbitSvgRadius;
 
-  // Hohmann Transfer Orbit drawing
-  const hohmannEccentricity = (r2 - r1) / (r2 + r1);
-  const tx_a = a_tx * scaleRatio;
+  const hohmannEccentricity =
+    (r2ForScale - r1ForScale) / (r2ForScale + r1ForScale);
+  const tx_a = ((r1ForScale + r2ForScale) / 2) * scaleRatio;
   const tx_b = tx_a * Math.sqrt(1 - Math.pow(hohmannEccentricity, 2));
-  const tx_focus_offset = ((r2 - r1) / 2) * scaleRatio;
+  const tx_focus_offset = ((r2ForScale - r1ForScale) / 2) * scaleRatio;
 
-  // Hohmann satellite position
   let hSatX = 150;
   let hSatY = 150;
-
   if (hohmannPhase === "burn1" || hohmannPhase === "idle") {
     hSatX = 150 + depSvgRadius;
     hSatY = 150;
   } else if (hohmannPhase === "coasting") {
     const rx =
-      (a_tx * (1 - Math.pow(hohmannEccentricity, 2))) /
+      (((r1ForScale + r2ForScale) / 2) *
+        (1 - Math.pow(hohmannEccentricity, 2))) /
       (1 + hohmannEccentricity * Math.cos(hohmannSimAngle));
     const scaledRx = rx * scaleRatio;
     hSatX = 150 + Math.cos(hohmannSimAngle) * scaledRx;
@@ -229,6 +342,9 @@ Time of Flight: ${(tof_sec / 3600).toFixed(2)} hours (${(tof_sec / 60).toFixed(1
     hSatX = 150 + Math.cos(hohmannSimAngle) * arrSvgRadius;
     hSatY = 150 + Math.sin(hohmannSimAngle) * arrSvgRadius;
   }
+
+  // ---------- Render helpers ----------
+  const periodMin = circular?.period.period_min ?? 0;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[calc(100vh-8rem)]">
@@ -242,30 +358,36 @@ Time of Flight: ${(tof_sec / 3600).toFixed(2)} hours (${(tof_sec / 60).toFixed(1
               <h3 className="font-display font-semibold text-white">
                 Orbital Mechanics Setup
               </h3>
+              {circularLoading && (
+                <Loader2 className="w-3.5 h-3.5 text-indigo-400 animate-spin" />
+              )}
             </div>
             <div className="text-xs text-indigo-300 font-mono bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded-full">
-              {body} Gravitational Kernel Active
+              Earth Gravitational Kernel Active
             </div>
           </div>
 
+          {circularError && (
+            <div className="flex items-start gap-2 p-3 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-300 text-xs font-mono">
+              <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+              <span>{circularError}</span>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {/* Body Select */}
             <div>
               <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider font-mono">
                 Central Celestial Body
               </label>
               <select
-                value={body}
-                onChange={(e) => setBody(e.target.value as CentralBody)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none"
+                value="Earth"
+                disabled
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none opacity-90"
               >
                 <option value="Earth">🌏 Earth</option>
-                <option value="Mars">🔴 Mars</option>
-                <option value="Moon">🌑 Moon</option>
               </select>
             </div>
 
-            {/* Circular altitude */}
             <div>
               <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider font-mono">
                 Circular Alt. (km)
@@ -274,22 +396,21 @@ Time of Flight: ${(tof_sec / 3600).toFixed(2)} hours (${(tof_sec / 60).toFixed(1
                 type="number"
                 value={altitude}
                 onChange={(e) =>
-                  setAltitude(Math.max(10, parseInt(e.target.value) || 0))
+                  setAltitude(Math.max(0, parseInt(e.target.value) || 0))
                 }
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none font-mono"
               />
             </div>
 
-            {/* Scale visual reference */}
             <div className="flex flex-col justify-end">
               <span className="text-[10px] text-slate-500 font-mono">
                 CELESTIAL CONSTANTS:
               </span>
               <span className="text-xs text-slate-300 font-mono mt-1">
-                μ: {bodyData.mu.toLocaleString()} km³/s²
+                μ: 398,600.44 km³/s²
               </span>
               <span className="text-xs text-slate-300 font-mono">
-                R: {bodyData.radius.toLocaleString()} km
+                R: {EARTH_RADIUS_KM.toLocaleString()} km
               </span>
             </div>
           </div>
@@ -301,7 +422,7 @@ Time of Flight: ${(tof_sec / 3600).toFixed(2)} hours (${(tof_sec / 60).toFixed(1
                 Orbital Speed
               </p>
               <p className="text-lg font-bold text-emerald-400 font-mono mt-1">
-                {v_c.toFixed(4)}{" "}
+                {circular ? circular.velocity.velocity_kms.toFixed(4) : "—"}{" "}
                 <span className="text-xs font-normal text-slate-400">km/s</span>
               </p>
             </div>
@@ -310,7 +431,9 @@ Time of Flight: ${(tof_sec / 3600).toFixed(2)} hours (${(tof_sec / 60).toFixed(1
                 Escape velocity
               </p>
               <p className="text-lg font-bold text-cyan-400 font-mono mt-1">
-                {escape_v.toFixed(4)}{" "}
+                {circular
+                  ? circular.escape.escape_velocity_kms.toFixed(4)
+                  : "—"}{" "}
                 <span className="text-xs font-normal text-slate-400">km/s</span>
               </p>
             </div>
@@ -319,9 +442,11 @@ Time of Flight: ${(tof_sec / 3600).toFixed(2)} hours (${(tof_sec / 60).toFixed(1
                 Orbital Period
               </p>
               <p className="text-lg font-bold text-amber-400 font-mono mt-1">
-                {period_min > 120
-                  ? `${(period_min / 60).toFixed(2)} h`
-                  : `${period_min.toFixed(1)} m`}
+                {circular
+                  ? periodMin > 120
+                    ? `${(periodMin / 60).toFixed(2)} h`
+                    : `${periodMin.toFixed(1)} m`
+                  : "—"}
               </p>
             </div>
             <div>
@@ -329,9 +454,11 @@ Time of Flight: ${(tof_sec / 3600).toFixed(2)} hours (${(tof_sec / 60).toFixed(1
                 Specific Energy
               </p>
               <p className="text-lg font-bold text-rose-400 font-mono mt-1">
-                {spec_energy.toFixed(2)}{" "}
+                {circular
+                  ? circular.energy.specific_energy_kms2.toFixed(4)
+                  : "—"}{" "}
                 <span className="text-xs font-normal text-slate-400">
-                  MJ/kg
+                  km²/s²
                 </span>
               </p>
             </div>
@@ -342,37 +469,66 @@ Time of Flight: ${(tof_sec / 3600).toFixed(2)} hours (${(tof_sec / 60).toFixed(1
             <h4 className="font-display font-medium text-slate-200">
               Keplerian Circular Formula Breakdown
             </h4>
-            <div className="space-y-2 font-mono">
-              <div className="flex justify-between items-center border-b border-slate-900 pb-1.5">
-                <span>Semi-major axis ($r$):</span>
-                <span className="text-slate-300">
-                  R + h = {bodyData.radius} + {altitude} ={" "}
-                  <strong className="text-indigo-400">{r.toFixed(1)} km</strong>
-                </span>
+            {circular ? (
+              <div className="space-y-2 font-mono">
+                <div className="flex justify-between items-center border-b border-slate-900 pb-1.5">
+                  <span>Semi-major axis (a):</span>
+                  <span className="text-slate-300">
+                    R + h ={" "}
+                    <strong className="text-indigo-400">
+                      {circular.period.semi_major_axis_km.toFixed(3)} km
+                    </strong>
+                  </span>
+                </div>
+                <div className="flex justify-between items-center border-b border-slate-900 pb-1.5">
+                  <span>Orbital velocity — {circular.velocity.formula}:</span>
+                  <span className="text-slate-300">
+                    a = {circular.velocity.semi_major_axis_km.toFixed(3)} ⇒{" "}
+                    <strong className="text-emerald-400">
+                      {circular.velocity.velocity_kms.toFixed(4)} km/s
+                    </strong>
+                  </span>
+                </div>
+                <div className="flex justify-between items-center border-b border-slate-900 pb-1.5">
+                  <span>Escape speed — {circular.escape.formula}:</span>
+                  <span className="text-slate-300">
+                    a = {circular.escape.semi_major_axis_km.toFixed(3)} ⇒{" "}
+                    <strong className="text-cyan-400">
+                      {circular.escape.escape_velocity_kms.toFixed(4)} km/s
+                    </strong>
+                  </span>
+                </div>
+                <div className="flex justify-between items-center border-b border-slate-900 pb-1.5">
+                  <span>Period — {circular.period.formula}:</span>
+                  <span className="text-slate-300">
+                    a = {circular.period.semi_major_axis_km.toFixed(3)} ⇒{" "}
+                    <strong className="text-amber-400">
+                      {circular.period.period_s.toFixed(2)} s
+                    </strong>
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span>Specific energy — {circular.energy.formula}:</span>
+                  <span className="text-slate-300">
+                    a = {circular.energy.semi_major_axis_km.toFixed(3)} ⇒{" "}
+                    <strong className="text-rose-400">
+                      {circular.energy.specific_energy_kms2.toFixed(4)} km²/s²
+                    </strong>
+                  </span>
+                </div>
               </div>
-              <div className="flex justify-between items-center border-b border-slate-900 pb-1.5">
-                <span>Orbital velocity ($v_c$):</span>
-                <span className="text-slate-300">
-                  √ (μ / r) = √ ({bodyData.mu} / {r.toFixed(1)}) ={" "}
-                  <strong className="text-emerald-400">
-                    {v_c.toFixed(4)} km/s
-                  </strong>
-                </span>
+            ) : (
+              <div className="text-slate-500 font-mono text-xs">
+                {circularLoading
+                  ? "Solving on the science service…"
+                  : "Awaiting valid altitude."}
               </div>
-              <div className="flex justify-between items-center">
-                <span>Escape speed ($v_e$):</span>
-                <span className="text-slate-300">
-                  √ (2μ / r) = √ (2 * {bodyData.mu} / {r.toFixed(1)}) ={" "}
-                  <strong className="text-cyan-400">
-                    {escape_v.toFixed(4)} km/s
-                  </strong>
-                </span>
-              </div>
-            </div>
+            )}
             <div className="flex justify-end gap-2 mt-2">
               <button
                 onClick={saveCircularNotes}
-                className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg transition-all text-[11px] flex items-center gap-1.5 border border-slate-800"
+                disabled={!circular}
+                className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg transition-all text-[11px] flex items-center gap-1.5 border border-slate-800 disabled:opacity-40 disabled:hover:bg-slate-900"
               >
                 <Save className="w-3.5 h-3.5" /> Save Parameters to Notes
               </button>
@@ -387,7 +543,17 @@ Time of Flight: ${(tof_sec / 3600).toFixed(2)} hours (${(tof_sec / 60).toFixed(1
             <h3 className="font-display font-semibold text-white">
               Hohmann Transfer Trajectory
             </h3>
+            {hohmannLoading && (
+              <Loader2 className="w-3.5 h-3.5 text-amber-400 animate-spin" />
+            )}
           </div>
+
+          {hohmannError && (
+            <div className="flex items-start gap-2 p-3 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-300 text-xs font-mono">
+              <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+              <span>{hohmannError}</span>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -398,7 +564,7 @@ Time of Flight: ${(tof_sec / 3600).toFixed(2)} hours (${(tof_sec / 60).toFixed(1
                 type="number"
                 value={depAltitude}
                 onChange={(e) =>
-                  setDepAltitude(Math.max(10, parseInt(e.target.value) || 0))
+                  setDepAltitude(Math.max(0, parseInt(e.target.value) || 0))
                 }
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-100 font-mono focus:border-indigo-500 focus:outline-none"
               />
@@ -411,7 +577,7 @@ Time of Flight: ${(tof_sec / 3600).toFixed(2)} hours (${(tof_sec / 60).toFixed(1
                 type="number"
                 value={arrAltitude}
                 onChange={(e) =>
-                  setArrAltitude(Math.max(10, parseInt(e.target.value) || 0))
+                  setArrAltitude(Math.max(0, parseInt(e.target.value) || 0))
                 }
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-100 font-mono focus:border-indigo-500 focus:outline-none"
               />
@@ -424,7 +590,7 @@ Time of Flight: ${(tof_sec / 3600).toFixed(2)} hours (${(tof_sec / 60).toFixed(1
                 Departure Burn ΔV₁
               </p>
               <p className="text-md font-bold text-indigo-400 mt-1">
-                {delta_v1.toFixed(4)} km/s
+                {hohmann ? hohmann.delta_v1_kms.toFixed(4) : "—"} km/s
               </p>
             </div>
             <div>
@@ -432,7 +598,7 @@ Time of Flight: ${(tof_sec / 3600).toFixed(2)} hours (${(tof_sec / 60).toFixed(1
                 Arrival Burn ΔV₂
               </p>
               <p className="text-md font-bold text-indigo-400 mt-1">
-                {delta_v2.toFixed(4)} km/s
+                {hohmann ? hohmann.delta_v2_kms.toFixed(4) : "—"} km/s
               </p>
             </div>
             <div className="col-span-2 sm:col-span-1">
@@ -440,30 +606,59 @@ Time of Flight: ${(tof_sec / 3600).toFixed(2)} hours (${(tof_sec / 60).toFixed(1
                 Total Required ΔV
               </p>
               <p className="text-md font-bold text-emerald-400 mt-1">
-                {total_delta_v.toFixed(4)} km/s
+                {hohmann ? hohmann.dv_total_kms.toFixed(4) : "—"} km/s
               </p>
             </div>
           </div>
 
-          <div className="space-y-1.5 text-xs text-slate-400 font-mono bg-slate-950/40 p-3.5 rounded-xl border border-slate-800/60">
-            <div className="flex justify-between">
-              <span>Transfer semi-major axis ({"$a_{tx}$"}):</span>
-              <span className="text-slate-300">{a_tx.toFixed(1)} km</span>
+          {hohmann ? (
+            <div className="space-y-1.5 text-xs text-slate-400 font-mono bg-slate-950/40 p-3.5 rounded-xl border border-slate-800/60">
+              <div className="flex justify-between">
+                <span>Departure radius (r₁):</span>
+                <span className="text-slate-300">
+                  {hohmann.initial_radius_km.toFixed(3)} km
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>Arrival radius (r₂):</span>
+                <span className="text-slate-300">
+                  {hohmann.final_radius_km.toFixed(3)} km
+                </span>
+              </div>
+              <div className="flex justify-between border-t border-slate-900 pt-1.5 mt-1">
+                <span>{hohmann.formula_delta_v1}</span>
+                <strong className="text-indigo-400">
+                  {hohmann.delta_v1_kms.toFixed(4)} km/s
+                </strong>
+              </div>
+              <div className="flex justify-between">
+                <span>{hohmann.formula_delta_v2}</span>
+                <strong className="text-indigo-400">
+                  {hohmann.delta_v2_kms.toFixed(4)} km/s
+                </strong>
+              </div>
+              <div className="flex justify-between">
+                <span>{hohmann.formula_transfer_time}</span>
+                <strong className="text-amber-400">
+                  {(hohmann.transfer_time_s / 3600).toFixed(2)} h (
+                  {(hohmann.transfer_time_s / 60).toFixed(1)} min)
+                </strong>
+              </div>
             </div>
-            <div className="flex justify-between">
-              <span>Time of Flight ({"$T_{of}$"}):</span>
-              <span className="text-amber-400 font-medium">
-                {(tof_sec / 3600).toFixed(2)} hours ({(tof_sec / 60).toFixed(1)}{" "}
-                minutes)
-              </span>
+          ) : (
+            <div className="text-slate-500 font-mono text-xs bg-slate-950/40 p-3.5 rounded-xl border border-slate-800/60">
+              {hohmannLoading
+                ? "Solving Hohmann transfer on the science service…"
+                : "Awaiting valid departure/arrival altitudes."}
             </div>
-          </div>
+          )}
 
           <div className="flex justify-between items-center mt-2">
             {!isHohmannAnimating ? (
               <button
                 onClick={handleStartHohmannTransfer}
-                className="px-4 py-2 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white rounded-xl text-xs font-semibold flex items-center gap-2 shadow-lg shadow-amber-600/10 transition-all"
+                disabled={!hohmann}
+                className="px-4 py-2 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white rounded-xl text-xs font-semibold flex items-center gap-2 shadow-lg shadow-amber-600/10 transition-all disabled:opacity-40 disabled:hover:bg-amber-600"
               >
                 <Flame className="w-4 h-4 text-white animate-pulse" /> Trigger
                 Hohmann Transfer Animation
@@ -479,7 +674,8 @@ Time of Flight: ${(tof_sec / 3600).toFixed(2)} hours (${(tof_sec / 60).toFixed(1
 
             <button
               onClick={saveHohmannNotes}
-              className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 rounded-lg transition-all text-[11px] flex items-center gap-1.5"
+              disabled={!hohmann}
+              className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 rounded-lg transition-all text-[11px] flex items-center gap-1.5 disabled:opacity-40 disabled:hover:bg-slate-900"
             >
               <Save className="w-3.5 h-3.5" /> Save Hohmann Data
             </button>
@@ -511,9 +707,7 @@ Time of Flight: ${(tof_sec / 3600).toFixed(2)} hours (${(tof_sec / 60).toFixed(1
             </div>
           </div>
 
-          {/* Interactive SVG Render Canvas */}
           <div className="relative w-full aspect-square bg-slate-950 border border-slate-800/80 rounded-xl overflow-hidden shadow-inner flex items-center justify-center space-grid">
-            {/* Ambient Background Stars */}
             <div className="absolute inset-0 pointer-events-none opacity-40">
               <div
                 className="absolute top-8 left-1/4 w-1 h-1 bg-white rounded-full animate-ping"
@@ -525,7 +719,6 @@ Time of Flight: ${(tof_sec / 3600).toFixed(2)} hours (${(tof_sec / 60).toFixed(1
             </div>
 
             <svg className="w-full h-full max-w-[360px]" viewBox="0 0 300 300">
-              {/* Scale concentric orbit guides for visual context */}
               <circle
                 cx="150"
                 cy="150"
@@ -551,7 +744,6 @@ Time of Flight: ${(tof_sec / 3600).toFixed(2)} hours (${(tof_sec / 60).toFixed(1
                 strokeDasharray="3,3"
               />
 
-              {/* standard orbit guide circular (static path) */}
               {!isHohmannAnimating && (
                 <circle
                   cx="150"
@@ -563,10 +755,8 @@ Time of Flight: ${(tof_sec / 3600).toFixed(2)} hours (${(tof_sec / 60).toFixed(1
                 />
               )}
 
-              {/* Hohmann animation overlays */}
               {isHohmannAnimating && (
                 <>
-                  {/* Dep orbit circular */}
                   <circle
                     cx="150"
                     cy="150"
@@ -576,8 +766,6 @@ Time of Flight: ${(tof_sec / 3600).toFixed(2)} hours (${(tof_sec / 60).toFixed(1
                     strokeWidth="1"
                     strokeDasharray="2,2"
                   />
-
-                  {/* Arr orbit circular */}
                   <circle
                     cx="150"
                     cy="150"
@@ -587,8 +775,6 @@ Time of Flight: ${(tof_sec / 3600).toFixed(2)} hours (${(tof_sec / 60).toFixed(1
                     strokeWidth="1"
                     strokeDasharray="2,2"
                   />
-
-                  {/* Transfer ellipse: Semi-major axis = tx_a, semi-minor axis = tx_b. Focused on Central body */}
                   {(hohmannPhase === "coasting" ||
                     hohmannPhase === "burn1") && (
                     <ellipse
@@ -605,15 +791,13 @@ Time of Flight: ${(tof_sec / 3600).toFixed(2)} hours (${(tof_sec / 60).toFixed(1
                 </>
               )}
 
-              {/* Central Planet */}
               <circle
                 cx="150"
                 cy="150"
                 r={planetSvgRadius}
-                fill={bodyData.color}
+                fill="#38bdf8"
                 className="shadow-lg filter drop-shadow-[0_0_8px_rgba(56,189,248,0.5)]"
               />
-              {/* Core planet interior accent */}
               <circle
                 cx="150"
                 cy="150"
@@ -621,7 +805,6 @@ Time of Flight: ${(tof_sec / 3600).toFixed(2)} hours (${(tof_sec / 60).toFixed(1
                 fill="rgba(0, 0, 0, 0.15)"
               />
 
-              {/* Circular satellite orbiter */}
               {!isHohmannAnimating && (
                 <g>
                   <circle
@@ -645,7 +828,6 @@ Time of Flight: ${(tof_sec / 3600).toFixed(2)} hours (${(tof_sec / 60).toFixed(1
                 </g>
               )}
 
-              {/* Hohmann animation satellite orbiter */}
               {isHohmannAnimating && (
                 <g>
                   <circle
@@ -660,8 +842,6 @@ Time of Flight: ${(tof_sec / 3600).toFixed(2)} hours (${(tof_sec / 60).toFixed(1
                           : "#6366f1"
                     }
                   />
-
-                  {/* Flashing thrust burn flash */}
                   {(hohmannPhase === "burn1" || hohmannPhase === "burn2") && (
                     <circle
                       cx={hSatX}
@@ -677,7 +857,6 @@ Time of Flight: ${(tof_sec / 3600).toFixed(2)} hours (${(tof_sec / 60).toFixed(1
               )}
             </svg>
 
-            {/* Float HUD overlays */}
             <div className="absolute bottom-3 left-3 bg-slate-950/90 border border-slate-800 p-2.5 rounded-lg text-[10px] font-mono text-slate-400 flex flex-col gap-1">
               <div className="flex justify-between gap-4">
                 <span>SIM STATE:</span>
@@ -701,7 +880,6 @@ Time of Flight: ${(tof_sec / 3600).toFixed(2)} hours (${(tof_sec / 60).toFixed(1
               )}
             </div>
 
-            {/* Countdown Overlay during transfer */}
             {isHohmannAnimating && hohmannPhase === "coasting" && (
               <div className="absolute top-3 left-3 bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 rounded-lg font-mono text-xs text-amber-400">
                 🚀 Coasting TOF Timeleft: {(hohmannTimeLeft / 60).toFixed(1)}{" "}
@@ -710,7 +888,6 @@ Time of Flight: ${(tof_sec / 3600).toFixed(2)} hours (${(tof_sec / 60).toFixed(1
             )}
           </div>
 
-          {/* Speed Warp control slider */}
           <div className="w-full">
             <div className="flex justify-between items-center mb-1">
               <span className="text-xs font-medium text-slate-400 font-mono">

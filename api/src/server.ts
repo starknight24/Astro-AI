@@ -3,6 +3,7 @@ import cors from "cors";
 import express from "express";
 import { GoogleGenAI, Type } from "@google/genai";
 import { requireAuth } from "./middleware/auth";
+import calculateRouter from "./routes/calculate";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3001;
@@ -15,6 +16,8 @@ app.get("/", (_req, res) => {
 });
 
 app.use("/api", requireAuth);
+
+app.use("/api/calculate", calculateRouter);
 
 // ---------- Shared types & helpers ----------
 
