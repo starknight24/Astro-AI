@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Orbit,
   Compass,
@@ -19,7 +20,6 @@ import OrbitalCalculator from "./components/OrbitalCalculator";
 import ProblemGenerator from "./components/ProblemGenerator";
 import NasaExplorer from "./components/NasaExplorer";
 import PaperRag from "./components/PaperRag";
-import LandingPage from "./components/LandingPage";
 import { useAuth } from "./lib/AuthContext";
 
 // Pre-seeded local bookmarks for immediate student exploration
@@ -44,8 +44,7 @@ const INITIAL_NOTES: SavedNote[] = [
 
 export default function App() {
   const { user, signOut } = useAuth();
-  const [showLanding, setShowLanding] = useState(true);
-  const [fadingOut, setFadingOut] = useState(false);
+  const navigate = useNavigate();
 
   const [degreeLevel, setDegreeLevel] = useState<AcademicLevel>("Bachelor");
   const [activeTab, setActiveTab] = useState<
@@ -139,20 +138,10 @@ export default function App() {
     setSavedNotes((prev) => prev.filter((n) => n.id !== id));
   };
 
-  const handleEnterPlatform = () => {
-    setFadingOut(true);
-    setTimeout(() => setShowLanding(false), 500);
+  const handleSignOut = async () => {
+    navigate("/", { replace: true });
+    await signOut();
   };
-
-  if (showLanding) {
-    return (
-      <div
-        style={{ opacity: fadingOut ? 0 : 1, transition: "opacity 0.5s ease" }}
-      >
-        <LandingPage onLaunch={handleEnterPlatform} />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-indigo-500/30 selection:text-indigo-200 animate-fade-in">
@@ -197,7 +186,7 @@ export default function App() {
             <span>UTC: {time.toISOString().substring(11, 19)}</span>
           </div>
           <button
-            onClick={() => signOut()}
+            onClick={handleSignOut}
             title={user?.email ?? "Sign out"}
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white transition-all"
           >
