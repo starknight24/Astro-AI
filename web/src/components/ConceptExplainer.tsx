@@ -45,6 +45,28 @@ const PRESET_TOPICS = [
   },
 ];
 
+const eyebrow: React.CSSProperties = {
+  fontFamily: "'Space Mono', ui-monospace, monospace",
+  fontSize: 10.5,
+  letterSpacing: "0.24em",
+  textTransform: "uppercase",
+  color: "#9aa0bd",
+};
+
+const iconChip: React.CSSProperties = {
+  width: 44,
+  height: 44,
+  borderRadius: 12,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flexShrink: 0,
+  background:
+    "linear-gradient(135deg, rgba(139,108,255,.25), rgba(94,242,168,.14))",
+  border: "1px solid rgba(139,108,255,.35)",
+  color: "#c9baff",
+};
+
 export default function ConceptExplainer({
   degreeLevel,
   setDegreeLevel,
@@ -149,9 +171,8 @@ export default function ConceptExplainer({
     ]);
   };
 
-  // Basic LaTeX highlighting wrapper to render block and inline equations cleanly
+  // LaTeX-lite: block $$...$$ → glass mono block, inline $...$ → violet chip
   const renderFormattedText = (text: string) => {
-    // Splits by block math ($$...$$) first, then inline math ($...$)
     const blocks = text.split(/(\$\$.*?\$\$)/gs);
     return blocks.map((block, idx) => {
       if (block.startsWith("$$") && block.endsWith("$$")) {
@@ -159,7 +180,18 @@ export default function ConceptExplainer({
         return (
           <div
             key={idx}
-            className="my-3 p-3 bg-slate-900/80 border border-emerald-500/30 rounded-lg font-mono text-emerald-400 overflow-x-auto text-center shadow-inner"
+            style={{
+              margin: "12px 0",
+              padding: "12px 14px",
+              background: "rgba(3,5,14,.6)",
+              border: "1px solid rgba(94,242,168,.28)",
+              borderRadius: 12,
+              fontFamily: "'Space Mono', ui-monospace, monospace",
+              fontSize: 13,
+              color: "#5ef2a8",
+              textAlign: "center",
+              overflowX: "auto",
+            }}
           >
             {eq}
           </div>
@@ -175,7 +207,16 @@ export default function ConceptExplainer({
               return (
                 <code
                   key={sIdx}
-                  className="px-1.5 py-0.5 mx-0.5 bg-slate-900 border border-cyan-500/20 text-cyan-400 rounded font-mono text-sm"
+                  style={{
+                    padding: "2px 6px",
+                    margin: "0 2px",
+                    background: "rgba(139,108,255,.1)",
+                    border: "1px solid rgba(139,108,255,.3)",
+                    color: "#c9baff",
+                    borderRadius: 6,
+                    fontFamily: "'Space Mono', ui-monospace, monospace",
+                    fontSize: 12.5,
+                  }}
                 >
                   {eq}
                 </code>
@@ -189,175 +230,419 @@ export default function ConceptExplainer({
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)] bg-slate-950/60 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl backdrop-blur-md">
-      {/* Header Panel */}
-      <div className="px-6 py-4 border-b border-slate-800 bg-slate-900/70 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-indigo-500/10 text-indigo-400 rounded-lg">
-            <GraduationCap className="w-6 h-6" />
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "calc(100vh - 10rem)",
+        borderRadius: 22,
+        overflow: "hidden",
+        background:
+          "linear-gradient(180deg, rgba(14,17,34,.72), rgba(8,10,22,.8))",
+        border: "1px solid rgba(139,108,255,.2)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
+        boxShadow:
+          "0 30px 90px rgba(2,3,10,.5), 0 0 60px rgba(139,108,255,.08)",
+      }}
+    >
+      {/* Panel header */}
+      <div
+        style={{
+          padding: "18px 22px",
+          borderBottom: "1px solid rgba(139,108,255,.16)",
+          background: "rgba(6,8,18,.5)",
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 16,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 14,
+            minWidth: 0,
+          }}
+        >
+          <div style={iconChip}>
+            <GraduationCap size={22} />
           </div>
-          <div>
-            <h2 className="font-display font-semibold text-lg text-white">
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 3,
+              minWidth: 0,
+            }}
+          >
+            <h2
+              style={{
+                margin: 0,
+                fontFamily: "'Archivo Expanded', 'Archivo', sans-serif",
+                fontWeight: 800,
+                fontSize: 17,
+                color: "#eef0fb",
+                letterSpacing: "0.04em",
+              }}
+            >
               Academic Concept Explainer
             </h2>
-            <p className="text-xs text-slate-400">
-              Conversational STEM tutor for advanced space engineering topics
-            </p>
+            <span style={eyebrow}>
+              Conversational STEM tutor · orbital mechanics
+            </span>
           </div>
         </div>
 
-        {/* Configuration Row */}
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Academic Level */}
-          <div className="flex items-center bg-slate-950/80 border border-slate-800 rounded-lg p-1">
-            {(["Bachelor", "Master", "PhD"] as AcademicLevel[]).map((level) => (
-              <button
-                key={level}
-                onClick={() => setDegreeLevel(level)}
-                className={`px-3 py-1 text-xs rounded-md font-medium transition-all ${
-                  degreeLevel === level
-                    ? "bg-indigo-600 text-white shadow-md"
-                    : "text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                {level}
-              </button>
-            ))}
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            gap: 10,
+          }}
+        >
+          {/* Segmented academic level */}
+          <div
+            role="group"
+            aria-label="Academic level"
+            style={{
+              display: "inline-flex",
+              padding: 3,
+              borderRadius: 100,
+              background: "rgba(3,5,14,.5)",
+              border: "1px solid rgba(255,255,255,.14)",
+            }}
+          >
+            {(["Bachelor", "Master", "PhD"] as AcademicLevel[]).map((level) => {
+              const active = degreeLevel === level;
+              return (
+                <button
+                  key={level}
+                  onClick={() => setDegreeLevel(level)}
+                  style={{
+                    padding: "6px 14px",
+                    border: "none",
+                    borderRadius: 100,
+                    cursor: "pointer",
+                    fontFamily: "'Archivo', sans-serif",
+                    fontWeight: 600,
+                    fontSize: 12,
+                    letterSpacing: "0.02em",
+                    color: active ? "#06121a" : "#9aa0bd",
+                    background: active
+                      ? "linear-gradient(120deg,#8b6cff,#5ef2a8)"
+                      : "transparent",
+                    boxShadow: active
+                      ? "0 10px 40px rgba(139,108,255,.35)"
+                      : "none",
+                    transition: "color .15s ease",
+                  }}
+                >
+                  {level}
+                </button>
+              );
+            })}
           </div>
 
-          {/* Simplicity Mode Toggle */}
+          {/* Simplicity toggle */}
           <button
             onClick={() => setExplainSimply(!explainSimply)}
-            className={`px-3 py-1.5 text-xs rounded-lg font-medium border transition-all flex items-center gap-1.5 ${
-              explainSimply
-                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
-                : "bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-300"
-            }`}
+            className="aurora-ghost"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "8px 14px",
+              borderRadius: 100,
+              cursor: "pointer",
+              fontFamily: "'Archivo', sans-serif",
+              fontWeight: 600,
+              fontSize: 12,
+              letterSpacing: "0.02em",
+              color: explainSimply ? "#5ef2a8" : "#9aa0bd",
+              background: explainSimply
+                ? "rgba(94,242,168,.08)"
+                : "rgba(255,255,255,.04)",
+              border: explainSimply
+                ? "1px solid rgba(94,242,168,.35)"
+                : "1px solid rgba(255,255,255,.14)",
+            }}
           >
-            <Brain className="w-3.5 h-3.5" />
-            {explainSimply ? "Simply Analogy Mode" : "Strict Rigorous Mode"}
+            <Brain size={13} />
+            {explainSimply ? "Analogy mode" : "Rigorous mode"}
           </button>
 
-          {/* Reset */}
           <button
             onClick={handleReset}
-            title="Reset Chat History"
-            className="p-1.5 bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 rounded-lg transition-all"
+            title="Reset conversation"
+            className="aurora-ghost"
+            style={{
+              width: 36,
+              height: 36,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: 100,
+              background: "rgba(255,255,255,.04)",
+              border: "1px solid rgba(255,255,255,.14)",
+              color: "#9aa0bd",
+              cursor: "pointer",
+            }}
           >
-            <RotateCcw className="w-4 h-4" />
+            <RotateCcw size={14} />
           </button>
         </div>
       </div>
 
-      {/* Main Container */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Preset Topics Column - Desktop only */}
-        <div className="hidden lg:flex flex-col w-72 border-r border-slate-800 bg-slate-950/40 p-4 overflow-y-auto">
-          <div className="flex items-center gap-2 mb-3">
-            <BookOpen className="w-4 h-4 text-indigo-400" />
-            <h3 className="font-display font-medium text-xs text-indigo-300 uppercase tracking-wider">
-              Quick Lesson Topics
-            </h3>
+      {/* Body: preset column + chat feed */}
+      <div
+        style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0 }}
+      >
+        {/* Preset topics */}
+        <div
+          className="aurora-scroll"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            width: 280,
+            flex: "0 0 auto",
+            padding: 18,
+            gap: 12,
+            overflowY: "auto",
+            borderRight: "1px solid rgba(139,108,255,.14)",
+            background: "rgba(3,5,14,.35)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <BookOpen size={14} style={{ color: "#8b6cff" }} />
+            <span style={eyebrow}>Quick lesson topics</span>
           </div>
-          <div className="space-y-2.5">
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {PRESET_TOPICS.map((topic, idx) => (
               <button
                 key={idx}
                 disabled={loading}
                 onClick={() => handleSend(topic.query)}
-                className="w-full text-left p-3 rounded-xl bg-slate-900/40 hover:bg-slate-900/80 border border-slate-800 hover:border-slate-700 transition-all duration-200 text-xs text-slate-300 group disabled:opacity-50"
+                className="aurora-card"
+                style={{
+                  textAlign: "left",
+                  padding: "12px 14px",
+                  borderRadius: 14,
+                  background: "rgba(8,10,22,.6)",
+                  border: "1px solid rgba(255,255,255,.1)",
+                  color: "#eef0fb",
+                  cursor: loading ? "not-allowed" : "pointer",
+                  opacity: loading ? 0.5 : 1,
+                  fontFamily: "'Archivo', sans-serif",
+                  fontSize: 12.5,
+                  fontWeight: 500,
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: 8,
+                }}
               >
-                <div className="flex items-start gap-2">
-                  <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-indigo-400 mt-0.5 shrink-0 transition-colors" />
-                  <span className="font-medium group-hover:text-white transition-colors">
-                    {topic.title}
-                  </span>
-                </div>
+                <ChevronRight
+                  size={14}
+                  style={{ color: "#8b6cff", marginTop: 2, flexShrink: 0 }}
+                />
+                <span style={{ minWidth: 0 }}>{topic.title}</span>
               </button>
             ))}
           </div>
         </div>
 
-        {/* Chat Feed */}
-        <div className="flex-1 flex flex-col bg-slate-950/20">
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex gap-4 max-w-4xl ${msg.role === "user" ? "ml-auto justify-end" : "mr-auto"}`}
-              >
-                {msg.role !== "user" && (
-                  <div className="w-8 h-8 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0">
-                    <Sparkles className="w-4 h-4 text-indigo-400 animate-pulse" />
-                  </div>
-                )}
-
+        {/* Chat feed + composer */}
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0,
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <div
+            className="aurora-scroll"
+            style={{
+              flex: 1,
+              overflowY: "auto",
+              padding: 24,
+              display: "flex",
+              flexDirection: "column",
+              gap: 22,
+            }}
+          >
+            {messages.map((msg) => {
+              const user = msg.role === "user";
+              return (
                 <div
-                  className={`relative p-4 rounded-2xl border transition-all ${
-                    msg.role === "user"
-                      ? "bg-indigo-600/10 border-indigo-500/30 text-indigo-100 rounded-tr-none"
-                      : "bg-slate-900/60 border-slate-800/80 text-slate-300 rounded-tl-none"
-                  }`}
+                  key={msg.id}
+                  style={{
+                    display: "flex",
+                    gap: 12,
+                    maxWidth: "min(760px, 100%)",
+                    marginLeft: user ? "auto" : 0,
+                    marginRight: user ? 0 : "auto",
+                    flexDirection: user ? "row-reverse" : "row",
+                    alignItems: "flex-start",
+                  }}
                 >
-                  <p className="text-xs font-mono text-slate-500 mb-1">
-                    {msg.role === "user" ? "Student" : "AstroAI Tutor"} •{" "}
-                    {new Date(msg.timestamp).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </p>
-
-                  <div className="whitespace-pre-wrap leading-relaxed text-sm">
-                    {renderFormattedText(msg.text)}
+                  <div
+                    style={{
+                      width: 34,
+                      height: 34,
+                      borderRadius: 10,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                      background: user
+                        ? "rgba(139,108,255,.15)"
+                        : "linear-gradient(135deg,#8b6cff,#5ef2a8)",
+                      border: user
+                        ? "1px solid rgba(139,108,255,.35)"
+                        : "1px solid transparent",
+                      color: user ? "#c9baff" : "#06121a",
+                      boxShadow: user
+                        ? "none"
+                        : "0 8px 26px rgba(139,108,255,.35)",
+                      fontFamily: "'Space Mono', ui-monospace, monospace",
+                      fontSize: 12,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {user ? degreeLevel[0] : <Sparkles size={16} />}
                   </div>
 
-                  {msg.role !== "user" && (
-                    <button
-                      onClick={() => copyToClipboard(msg.text, msg.id)}
-                      className="absolute top-3 right-3 p-1.5 bg-slate-950/80 hover:bg-slate-900 border border-slate-800 rounded text-slate-400 hover:text-slate-200 transition-all opacity-0 group-hover:opacity-100 md:opacity-100"
-                      title="Copy formula / text"
+                  <div
+                    style={{
+                      position: "relative",
+                      padding: "14px 16px",
+                      borderRadius: 16,
+                      background: "rgba(10,12,26,.7)",
+                      border: "1px solid rgba(139,108,255,.22)",
+                      color: "#eef0fb",
+                      minWidth: 0,
+                      flex: "0 1 auto",
+                    }}
+                  >
+                    <div
+                      style={{
+                        ...eyebrow,
+                        fontSize: 10,
+                        color: "#8b6cff",
+                        marginBottom: 6,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                      }}
                     >
-                      {copiedId === msg.id ? (
-                        <Check className="w-3.5 h-3.5 text-emerald-400" />
-                      ) : (
-                        <Copy className="w-3.5 h-3.5" />
-                      )}
-                    </button>
-                  )}
-                </div>
+                      <span>{user ? "Student" : "AstroAI Tutor"}</span>
+                      <span style={{ color: "#5c6180" }}>·</span>
+                      <span style={{ color: "#5c6180" }}>
+                        {new Date(msg.timestamp).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
 
-                {msg.role === "user" && (
-                  <div className="w-8 h-8 rounded-full bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center shrink-0">
-                    <span className="text-xs font-semibold text-indigo-300">
-                      {degreeLevel[0]}
-                    </span>
+                    <div
+                      style={{
+                        fontSize: 13.5,
+                        lineHeight: 1.6,
+                        color: "#eef0fb",
+                        whiteSpace: "pre-wrap",
+                        wordBreak: "break-word",
+                      }}
+                    >
+                      {renderFormattedText(msg.text)}
+                    </div>
+
+                    {!user && (
+                      <button
+                        onClick={() => copyToClipboard(msg.text, msg.id)}
+                        title="Copy"
+                        className="aurora-ghost"
+                        style={{
+                          position: "absolute",
+                          top: 10,
+                          right: 10,
+                          width: 26,
+                          height: 26,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          borderRadius: 100,
+                          background: "rgba(3,5,14,.6)",
+                          border: "1px solid rgba(255,255,255,.14)",
+                          color: "#9aa0bd",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {copiedId === msg.id ? (
+                          <Check size={13} style={{ color: "#5ef2a8" }} />
+                        ) : (
+                          <Copy size={13} />
+                        )}
+                      </button>
+                    )}
                   </div>
-                )}
-              </div>
-            ))}
+                </div>
+              );
+            })}
 
             {loading && (
-              <div className="flex gap-4 max-w-lg mr-auto">
-                <div className="w-8 h-8 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0">
-                  <Sparkles className="w-4 h-4 text-indigo-400 animate-pulse" />
+              <div
+                style={{
+                  display: "flex",
+                  gap: 12,
+                  maxWidth: 480,
+                  alignItems: "flex-start",
+                }}
+              >
+                <div
+                  style={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: 10,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                    background: "linear-gradient(135deg,#8b6cff,#5ef2a8)",
+                    color: "#06121a",
+                    boxShadow: "0 8px 26px rgba(139,108,255,.35)",
+                  }}
+                >
+                  <Sparkles size={16} />
                 </div>
-                <div className="p-4 bg-slate-900/60 border border-slate-800/80 rounded-2xl rounded-tl-none">
-                  <div className="flex items-center gap-1">
-                    <span
-                      className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"
-                      style={{ animationDelay: "0ms" }}
-                    />
-                    <span
-                      className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"
-                      style={{ animationDelay: "150ms" }}
-                    />
-                    <span
-                      className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"
-                      style={{ animationDelay: "300ms" }}
-                    />
+                <div
+                  style={{
+                    padding: "14px 16px",
+                    borderRadius: 16,
+                    background: "rgba(10,12,26,.7)",
+                    border: "1px solid rgba(139,108,255,.22)",
+                  }}
+                >
+                  <div
+                    style={{ display: "flex", gap: 4, alignItems: "center" }}
+                  >
+                    <Dot delay={0} />
+                    <Dot delay={0.2} />
+                    <Dot delay={0.4} />
                   </div>
-                  <p className="text-xs text-slate-500 mt-1 font-mono">
-                    Synthesizing textbook equations...
+                  <p
+                    style={{
+                      margin: "8px 0 0",
+                      ...eyebrow,
+                      fontSize: 10,
+                      color: "#9aa0bd",
+                    }}
+                  >
+                    Synthesizing textbook equations…
                   </p>
                 </div>
               </div>
@@ -365,10 +650,25 @@ export default function ConceptExplainer({
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input Box */}
-          <div className="p-4 border-t border-slate-800 bg-slate-950/50">
-            <div className="flex gap-3 max-w-5xl mx-auto">
+          {/* Composer */}
+          <div
+            style={{
+              padding: 16,
+              borderTop: "1px solid rgba(139,108,255,.16)",
+              background: "rgba(3,5,14,.4)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                gap: 10,
+                flexWrap: "wrap",
+                maxWidth: 900,
+                margin: "0 auto",
+              }}
+            >
               <input
+                className="aurora-input"
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -376,24 +676,84 @@ export default function ConceptExplainer({
                   if (e.key === "Enter") handleSend();
                 }}
                 disabled={loading}
-                placeholder="Ask about orbital parameters, launch vehicles, orbital decay, specific impulse..."
-                className="flex-1 bg-slate-950 hover:bg-slate-900 focus:bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none transition-all"
+                placeholder="Ask about orbital parameters, launch vehicles, orbital decay, specific impulse…"
+                style={{
+                  flex: "1 1 260px",
+                  minWidth: 0,
+                  padding: "12px 16px",
+                  borderRadius: 100,
+                  background: "rgba(3,5,14,.6)",
+                  border: "1px solid rgba(255,255,255,.12)",
+                  color: "#eef0fb",
+                  fontFamily: "'Archivo', sans-serif",
+                  fontSize: 13.5,
+                  outline: "none",
+                  transition: "border-color .15s ease, box-shadow .15s ease",
+                }}
               />
               <button
                 onClick={() => handleSend()}
                 disabled={loading || !input.trim()}
-                className="px-5 py-3 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 disabled:opacity-50 text-white rounded-xl font-medium transition-all flex items-center gap-2 shadow-lg shadow-indigo-600/10 shrink-0"
+                className="aurora-primary"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "12px 22px",
+                  borderRadius: 100,
+                  border: "none",
+                  cursor: loading || !input.trim() ? "not-allowed" : "pointer",
+                  fontFamily: "'Archivo', sans-serif",
+                  fontWeight: 700,
+                  fontSize: 13,
+                  letterSpacing: "0.02em",
+                  color: "#06121a",
+                  background: "linear-gradient(120deg,#8b6cff,#5ef2a8)",
+                  boxShadow: "0 10px 40px rgba(139,108,255,.35)",
+                  opacity: loading || !input.trim() ? 0.55 : 1,
+                  flex: "0 0 auto",
+                }}
               >
-                <Send className="w-4 h-4" />
-                <span className="hidden sm:inline">Transmit</span>
+                <Send size={14} />
+                <span>Transmit</span>
               </button>
             </div>
-            <p className="text-center text-[10px] text-slate-500 mt-2 font-mono uppercase tracking-wider">
-              AstroAI STEM Core • Response tailored for {degreeLevel} students
+            <p
+              style={{
+                margin: "10px 0 0",
+                textAlign: "center",
+                ...eyebrow,
+                fontSize: 10,
+                color: "#5c6180",
+              }}
+            >
+              AstroAI STEM Core · Response tuned for {degreeLevel} students
             </p>
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+function Dot({ delay }: { delay: number }) {
+  return (
+    <span
+      style={{
+        width: 7,
+        height: 7,
+        borderRadius: "50%",
+        background: "#c9baff",
+        display: "inline-block",
+        animation: `aurora-bounce 1s ${delay}s infinite ease-in-out`,
+      }}
+    >
+      <style>{`
+        @keyframes aurora-bounce {
+          0%, 80%, 100% { transform: translateY(0); opacity: .55; }
+          40% { transform: translateY(-4px); opacity: 1; }
+        }
+      `}</style>
+    </span>
   );
 }

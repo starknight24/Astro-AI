@@ -20,6 +20,7 @@ import OrbitalCalculator from "./components/OrbitalCalculator";
 import ProblemGenerator from "./components/ProblemGenerator";
 import NasaExplorer from "./components/NasaExplorer";
 import PaperRag from "./components/PaperRag";
+import SpaceBackdrop from "./components/SpaceBackdrop";
 import { useAuth } from "./lib/AuthContext";
 
 // Pre-seeded local bookmarks for immediate student exploration
@@ -41,6 +42,14 @@ const INITIAL_NOTES: SavedNote[] = [
     timestamp: new Date(),
   },
 ];
+
+const eyebrow: React.CSSProperties = {
+  fontFamily: "'Space Mono', ui-monospace, monospace",
+  fontSize: 10.5,
+  letterSpacing: "0.24em",
+  textTransform: "uppercase",
+  color: "#9aa0bd",
+};
 
 export default function App() {
   const { user, signOut } = useAuth();
@@ -143,250 +152,676 @@ export default function App() {
     await signOut();
   };
 
+  const tabs = [
+    { id: "tutor", label: "Space Tutor", icon: GraduationCap },
+    { id: "calc", label: "Orbit Calculator", icon: Orbit },
+    { id: "problems", label: "Problem Sets", icon: ClipboardList },
+    { id: "nasa", label: "NASA Explorer", icon: Compass },
+    { id: "rag", label: "RAG Workspace", icon: BookOpen },
+  ] as const;
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-indigo-500/30 selection:text-indigo-200 animate-fade-in">
-      {/* HUD Top Bar */}
-      <header className="h-16 border-b border-slate-800 bg-slate-900/50 backdrop-blur-md flex items-center justify-between px-6 z-20 shrink-0">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-1.5 rounded-lg bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white transition-all shrink-0"
-          >
-            {sidebarOpen ? (
-              <X className="w-5 h-5" />
-            ) : (
-              <Menu className="w-5 h-5" />
-            )}
-          </button>
+    <div
+      style={{
+        position: "relative",
+        minHeight: "100vh",
+        overflow: "clip",
+        color: "#eef0fb",
+        fontFamily: "'Archivo', system-ui, sans-serif",
+        background: "#03040a",
+      }}
+    >
+      <style>{`
+        ::selection { background: rgba(94,242,168,.3); color: #06121a; }
+        .aurora-input::placeholder { color: #5c6180; }
+        .aurora-input:focus {
+          border-color: rgba(139,108,255,.65) !important;
+          box-shadow: 0 0 0 3px rgba(139,108,255,.18);
+        }
+        .aurora-tab { transition: background .15s ease, border-color .15s ease, color .15s ease, transform .15s ease; }
+        .aurora-tab.inactive:hover {
+          background: rgba(255,255,255,.06);
+          border-color: rgba(255,255,255,.22);
+          color: #eef0fb;
+        }
+        .aurora-ghost { transition: background .15s ease, border-color .15s ease, color .15s ease; }
+        .aurora-ghost:hover:not(:disabled) {
+          background: rgba(255,255,255,.06);
+          border-color: rgba(255,255,255,.22);
+          color: #eef0fb;
+        }
+        .aurora-primary { transition: transform .15s ease, filter .15s ease; }
+        .aurora-primary:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); }
+        .aurora-card { transition: background .15s ease, border-color .15s ease; }
+        .aurora-card:hover {
+          background: rgba(139,108,255,.08);
+          border-color: rgba(139,108,255,.45);
+        }
+        .aurora-danger:hover { color: #ff7d7d !important; background: rgba(255,125,125,.08); }
+        .aurora-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+        .aurora-scroll::-webkit-scrollbar-thumb {
+          background: rgba(139,108,255,.28);
+          border-radius: 8px;
+        }
+        .aurora-scroll::-webkit-scrollbar-track { background: transparent; }
+      `}</style>
 
-          <div className="flex items-center gap-2">
-            <Orbit
-              className="w-6 h-6 text-indigo-500 animate-spin"
-              style={{ animationDuration: "12s" }}
-            />
-            <div>
-              <span className="font-display font-extrabold text-lg text-white tracking-tight">
-                AstroAI
+      <SpaceBackdrop />
+
+      <div
+        style={{
+          position: "relative",
+          zIndex: 1,
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        {/* HUD Top Bar */}
+        <header
+          style={{
+            height: 64,
+            flexShrink: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "0 24px",
+            background: "rgba(6,8,18,.6)",
+            backdropFilter: "blur(14px)",
+            WebkitBackdropFilter: "blur(14px)",
+            borderBottom: "1px solid rgba(139,108,255,.16)",
+            zIndex: 20,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 14,
+              minWidth: 0,
+            }}
+          >
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="aurora-ghost"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 36,
+                height: 36,
+                borderRadius: 100,
+                background: "rgba(255,255,255,.04)",
+                border: "1px solid rgba(255,255,255,.14)",
+                color: "#9aa0bd",
+                cursor: "pointer",
+                flexShrink: 0,
+              }}
+              aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
+            >
+              {sidebarOpen ? <X size={16} /> : <Menu size={16} />}
+            </button>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <OrbitMark />
+              <span
+                style={{
+                  fontFamily: "'Archivo Expanded', 'Archivo', sans-serif",
+                  fontWeight: 800,
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  fontSize: 15,
+                  color: "#eef0fb",
+                }}
+              >
+                Astro&nbsp;AI
               </span>
-              <span className="hidden sm:inline-block ml-2 text-xs font-mono px-2 py-0.5 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded">
-                v1.1 Core
+              <span
+                style={{
+                  ...eyebrow,
+                  fontSize: 9.5,
+                  letterSpacing: "0.18em",
+                  padding: "3px 9px",
+                  color: "#c9baff",
+                  border: "1px solid rgba(139,108,255,.4)",
+                  background: "rgba(139,108,255,.09)",
+                  borderRadius: 100,
+                }}
+              >
+                v1.1 · Core
               </span>
             </div>
           </div>
-        </div>
 
-        {/* Global Dashboard Readouts */}
-        <div className="flex items-center gap-6 text-xs font-mono text-slate-400">
-          <div className="hidden md:flex items-center gap-2 border-r border-slate-800 pr-5">
-            <span className="text-slate-500">TELESCOPE INCLINATION:</span>
-            <span className="text-emerald-400 font-bold">51.6° LEO</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-indigo-400" />
-            <span>UTC: {time.toISOString().substring(11, 19)}</span>
-          </div>
-          <button
-            onClick={handleSignOut}
-            title={user?.email ?? "Sign out"}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white transition-all"
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 18,
+              flexWrap: "wrap",
+              justifyContent: "flex-end",
+            }}
           >
-            <LogOut className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">Sign out</span>
-          </button>
-        </div>
-      </header>
-
-      {/* Main Structural Layout */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Academic telemetry dashboard side bar drawer */}
-        {sidebarOpen && (
-          <aside className="w-80 border-r border-slate-800 bg-slate-900/20 backdrop-blur-md flex flex-col shrink-0 z-10 overflow-y-auto">
-            {/* Quick Profile Overview */}
-            <div className="p-5 border-b border-slate-800 flex flex-col gap-3 bg-slate-950/20">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
-                  <GraduationCap className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-display font-semibold text-white text-sm">
-                    Academic Workspace
-                  </h3>
-                  <span className="text-xs text-slate-400 font-mono">
-                    {degreeLevel} level
-                  </span>
-                </div>
-              </div>
-
-              {/* Quick stats grid */}
-              <div className="grid grid-cols-2 gap-2 text-center font-mono text-xs pt-1">
-                <div className="bg-slate-950/70 p-2.5 rounded-lg border border-slate-900">
-                  <span className="text-[9px] text-slate-500 block">
-                    TUTOR RUNS
-                  </span>
-                  <strong className="text-md text-slate-200 mt-0.5 block">
-                    {stats.queriesRun}
-                  </strong>
-                </div>
-                <div className="bg-slate-950/70 p-2.5 rounded-lg border border-slate-900">
-                  <span className="text-[9px] text-slate-500 block">
-                    PROBLEMS SOLVED
-                  </span>
-                  <strong className="text-md text-slate-200 mt-0.5 block">
-                    {stats.problemsSolved}
-                  </strong>
-                </div>
-                <div className="bg-slate-950/70 p-2.5 rounded-lg border border-slate-900">
-                  <span className="text-[9px] text-slate-500 block">
-                    CALC RUNS
-                  </span>
-                  <strong className="text-md text-slate-200 mt-0.5 block">
-                    {stats.calculatorsUsed}
-                  </strong>
-                </div>
-                <div className="bg-slate-950/70 p-2.5 rounded-lg border border-slate-900">
-                  <span className="text-[9px] text-slate-500 block">
-                    AVG GRADE
-                  </span>
-                  <strong className="text-md text-emerald-400 mt-0.5 block">
-                    {stats.avgQuizScore}%
-                  </strong>
-                </div>
-              </div>
-            </div>
-
-            {/* Bookmarks Section */}
-            <div className="p-5 border-b border-slate-800 flex flex-col gap-3">
-              <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider block">
-                Your Saved Equations
+            <div
+              className="hud-inclination"
+              style={{
+                ...eyebrow,
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                paddingRight: 18,
+                borderRight: "1px solid rgba(255,255,255,.08)",
+              }}
+            >
+              <span style={{ color: "#5c6180" }}>Telescope incl.</span>
+              <span style={{ color: "#5ef2a8", fontWeight: 700 }}>
+                51.6° LEO
               </span>
-              {savedNotes.length === 0 ? (
-                <p className="text-xs text-slate-500 italic">
-                  No bookmarks recorded. Click Save Parameters in calculators or
-                  word problems.
-                </p>
-              ) : (
-                <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
-                  {savedNotes.map((n) => (
-                    <div
-                      key={n.id}
-                      className="p-3 bg-slate-950/60 border border-slate-800 rounded-xl flex justify-between items-start gap-3 text-xs"
+            </div>
+            <div
+              style={{
+                ...eyebrow,
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                color: "#c9baff",
+              }}
+            >
+              <Clock size={14} style={{ color: "#8b6cff" }} />
+              <span style={{ color: "#eef0fb" }}>
+                UTC {time.toISOString().substring(11, 19)}
+              </span>
+            </div>
+            <button
+              onClick={handleSignOut}
+              title={user?.email ?? "Sign out"}
+              className="aurora-ghost"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "8px 14px",
+                borderRadius: 100,
+                background: "rgba(255,255,255,.04)",
+                border: "1px solid rgba(255,255,255,.14)",
+                color: "#9aa0bd",
+                cursor: "pointer",
+                fontFamily: "'Space Mono', ui-monospace, monospace",
+                fontSize: 11,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+              }}
+            >
+              <LogOut size={13} />
+              <span>Sign out</span>
+            </button>
+          </div>
+        </header>
+
+        {/* Main Structural Layout */}
+        <div
+          style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0 }}
+        >
+          {/* Sidebar */}
+          {sidebarOpen && (
+            <aside
+              className="aurora-scroll"
+              style={{
+                width: 320,
+                flexShrink: 0,
+                display: "flex",
+                flexDirection: "column",
+                overflowY: "auto",
+                background: "rgba(5,7,16,.55)",
+                backdropFilter: "blur(12px)",
+                WebkitBackdropFilter: "blur(12px)",
+                borderRight: "1px solid rgba(139,108,255,.14)",
+                zIndex: 10,
+              }}
+            >
+              {/* Profile / stats */}
+              <div
+                style={{
+                  padding: 20,
+                  borderBottom: "1px solid rgba(139,108,255,.14)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 14,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={iconChipStyle}>
+                    <GraduationCap size={22} style={{ color: "#c9baff" }} />
+                  </div>
+                  <div
+                    style={{ display: "flex", flexDirection: "column", gap: 3 }}
+                  >
+                    <h3
+                      style={{
+                        margin: 0,
+                        fontFamily: "'Archivo Expanded', 'Archivo', sans-serif",
+                        fontWeight: 800,
+                        fontSize: 14,
+                        color: "#eef0fb",
+                        letterSpacing: "0.06em",
+                      }}
                     >
-                      <div className="flex flex-col gap-1 max-w-[80%]">
-                        <span className="font-semibold text-slate-200 line-clamp-1">
-                          {n.title}
-                        </span>
-                        <p className="text-[10px] text-slate-400 line-clamp-2 whitespace-pre-wrap">
-                          {n.content}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => handleDeleteNote(n.id)}
-                        className="p-1 hover:bg-slate-900 text-slate-500 hover:text-rose-400 rounded transition-all shrink-0"
-                        title="Delete Bookmark"
+                      Academic Workspace
+                    </h3>
+                    <span style={eyebrow}>{degreeLevel} level</span>
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: 8,
+                  }}
+                >
+                  <StatTile label="Tutor runs" value={stats.queriesRun} />
+                  <StatTile
+                    label="Problems solved"
+                    value={stats.problemsSolved}
+                  />
+                  <StatTile label="Calc runs" value={stats.calculatorsUsed} />
+                  <StatTile
+                    label="Avg grade"
+                    value={`${stats.avgQuizScore}%`}
+                    positive
+                  />
+                </div>
+              </div>
+
+              {/* Bookmarks */}
+              <div
+                style={{
+                  padding: 20,
+                  borderBottom: "1px solid rgba(139,108,255,.14)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 12,
+                }}
+              >
+                <span style={eyebrow}>Your saved equations</span>
+                {savedNotes.length === 0 ? (
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: 11.5,
+                      color: "#5c6180",
+                      fontStyle: "italic",
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    No bookmarks recorded. Save from a calculator or word
+                    problem.
+                  </p>
+                ) : (
+                  <div
+                    className="aurora-scroll"
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 8,
+                      maxHeight: 240,
+                      overflowY: "auto",
+                      paddingRight: 4,
+                    }}
+                  >
+                    {savedNotes.map((n) => (
+                      <div
+                        key={n.id}
+                        className="aurora-card"
+                        style={{
+                          padding: 12,
+                          background: "rgba(8,10,22,.6)",
+                          border: "1px solid rgba(255,255,255,.1)",
+                          borderRadius: 14,
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "flex-start",
+                          gap: 10,
+                        }}
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 4,
+                            minWidth: 0,
+                            flex: 1,
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontWeight: 600,
+                              color: "#eef0fb",
+                              fontSize: 12.5,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {n.title}
+                          </span>
+                          <p
+                            style={{
+                              margin: 0,
+                              fontSize: 10.5,
+                              color: "#9aa0bd",
+                              lineHeight: 1.45,
+                              display: "-webkit-box",
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: "vertical",
+                              overflow: "hidden",
+                              whiteSpace: "pre-wrap",
+                            }}
+                          >
+                            {n.content}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => handleDeleteNote(n.id)}
+                          title="Delete bookmark"
+                          className="aurora-danger"
+                          style={{
+                            flexShrink: 0,
+                            width: 26,
+                            height: 26,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            background: "transparent",
+                            border: "none",
+                            borderRadius: 8,
+                            color: "#5c6180",
+                            cursor: "pointer",
+                            transition: "color .15s ease, background .15s ease",
+                          }}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Activity */}
+              <div
+                style={{
+                  padding: 20,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 12,
+                }}
+              >
+                <span style={eyebrow}>Telemetry timeline</span>
+                <div
+                  className="aurora-scroll"
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 10,
+                    maxHeight: 200,
+                    overflowY: "auto",
+                    paddingRight: 4,
+                  }}
+                >
+                  {stats.recentActivity.map((act) => (
+                    <div
+                      key={act.id}
+                      style={{
+                        display: "flex",
+                        gap: 10,
+                        alignItems: "flex-start",
+                        fontFamily: "'Space Mono', ui-monospace, monospace",
+                        fontSize: 11,
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      <Activity
+                        size={13}
+                        style={{
+                          color: "#8b6cff",
+                          flexShrink: 0,
+                          marginTop: 2,
+                        }}
+                      />
+                      <div style={{ minWidth: 0 }}>
+                        <span style={{ color: "#eef0fb" }}>
+                          {act.description}
+                        </span>
+                        <span
+                          style={{
+                            display: "block",
+                            fontSize: 9.5,
+                            color: "#5c6180",
+                            letterSpacing: "0.14em",
+                            marginTop: 2,
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          {new Date(act.timestamp).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
                     </div>
                   ))}
                 </div>
-              )}
-            </div>
-
-            {/* Recent activity list */}
-            <div className="p-5 flex flex-col gap-3">
-              <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider block">
-                Telemetry Timeline
-              </span>
-              <div className="space-y-2 max-h-[180px] overflow-y-auto pr-1">
-                {stats.recentActivity.map((act) => (
-                  <div
-                    key={act.id}
-                    className="flex gap-2.5 items-start text-[11px] font-mono leading-relaxed"
-                  >
-                    <Activity className="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5" />
-                    <div>
-                      <span className="text-slate-300">{act.description}</span>
-                      <span className="block text-[9px] text-slate-500">
-                        {new Date(act.timestamp).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
-                    </div>
-                  </div>
-                ))}
               </div>
-            </div>
-          </aside>
-        )}
+            </aside>
+          )}
 
-        {/* Dynamic Category Panels Workspace */}
-        <main className="flex-1 flex flex-col overflow-hidden bg-slate-950">
-          {/* Internal Navigation Sub-Bar */}
-          <nav className="h-14 border-b border-slate-800 bg-slate-900/30 flex items-center justify-between px-6 overflow-x-auto shrink-0 z-10 gap-4">
-            <div className="flex gap-1">
-              {[
-                { id: "tutor", label: "Space Tutor", icon: GraduationCap },
-                { id: "calc", label: "Orbit Calculator", icon: Orbit },
-                { id: "problems", label: "Problem Sets", icon: ClipboardList },
-                { id: "nasa", label: "NASA Explorer", icon: Compass },
-                { id: "rag", label: "RAG Workspace", icon: BookOpen },
-              ].map((tab) => {
+          {/* Workspace */}
+          <main
+            style={{
+              flex: 1,
+              minWidth: 0,
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+            }}
+          >
+            {/* Tab pill bar */}
+            <nav
+              className="aurora-scroll"
+              style={{
+                height: 60,
+                flexShrink: 0,
+                display: "flex",
+                alignItems: "center",
+                padding: "0 24px",
+                gap: 8,
+                overflowX: "auto",
+                background: "rgba(6,8,18,.55)",
+                backdropFilter: "blur(12px)",
+                WebkitBackdropFilter: "blur(12px)",
+                borderBottom: "1px solid rgba(139,108,255,.14)",
+                zIndex: 10,
+              }}
+            >
+              {tabs.map((tab) => {
                 const Icon = tab.icon;
+                const active = activeTab === tab.id;
                 return (
                   <button
                     key={tab.id}
-                    onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold font-sans transition-all flex items-center gap-2 whitespace-nowrap ${
-                      activeTab === tab.id
-                        ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/10"
-                        : "text-slate-400 hover:text-slate-200 hover:bg-slate-900/50"
-                    }`}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`aurora-tab ${active ? "active" : "inactive"}`}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 8,
+                      padding: "8px 16px",
+                      borderRadius: 100,
+                      whiteSpace: "nowrap",
+                      cursor: "pointer",
+                      fontFamily: "'Archivo', sans-serif",
+                      fontWeight: 600,
+                      fontSize: 12.5,
+                      letterSpacing: "0.02em",
+                      color: active ? "#06121a" : "#9aa0bd",
+                      background: active
+                        ? "linear-gradient(120deg,#8b6cff,#5ef2a8)"
+                        : "rgba(255,255,255,.04)",
+                      border: active
+                        ? "1px solid transparent"
+                        : "1px solid rgba(255,255,255,.14)",
+                      boxShadow: active
+                        ? "0 10px 40px rgba(139,108,255,.35)"
+                        : "none",
+                    }}
                   >
-                    <Icon className="w-3.5 h-3.5" />
+                    <Icon size={14} />
                     <span>{tab.label}</span>
                   </button>
                 );
               })}
+            </nav>
+
+            {/* Active pane */}
+            <div
+              className="aurora-scroll"
+              style={{
+                flex: 1,
+                overflowY: "auto",
+                padding: 24,
+              }}
+            >
+              <div style={{ maxWidth: 1280, margin: "0 auto", height: "100%" }}>
+                {activeTab === "tutor" && (
+                  <ConceptExplainer
+                    degreeLevel={degreeLevel}
+                    setDegreeLevel={setDegreeLevel}
+                    onActivityAdded={handleActivityAdded}
+                  />
+                )}
+
+                {activeTab === "calc" && (
+                  <OrbitalCalculator
+                    onActivityAdded={handleActivityAdded}
+                    onSaveNote={handleSaveNote}
+                  />
+                )}
+
+                {activeTab === "problems" && (
+                  <ProblemGenerator
+                    onActivityAdded={handleActivityAdded}
+                    onSaveNote={handleSaveNote}
+                  />
+                )}
+
+                {activeTab === "nasa" && (
+                  <NasaExplorer onActivityAdded={handleActivityAdded} />
+                )}
+
+                {activeTab === "rag" && (
+                  <PaperRag onActivityAdded={handleActivityAdded} />
+                )}
+              </div>
             </div>
-          </nav>
-
-          {/* Active Pane Renders */}
-          <div className="flex-1 overflow-y-auto p-6 space-grid">
-            <div className="max-w-7xl mx-auto h-full">
-              {activeTab === "tutor" && (
-                <ConceptExplainer
-                  degreeLevel={degreeLevel}
-                  setDegreeLevel={setDegreeLevel}
-                  onActivityAdded={handleActivityAdded}
-                />
-              )}
-
-              {activeTab === "calc" && (
-                <OrbitalCalculator
-                  onActivityAdded={handleActivityAdded}
-                  onSaveNote={handleSaveNote}
-                />
-              )}
-
-              {activeTab === "problems" && (
-                <ProblemGenerator
-                  onActivityAdded={handleActivityAdded}
-                  onSaveNote={handleSaveNote}
-                />
-              )}
-
-              {activeTab === "nasa" && (
-                <NasaExplorer onActivityAdded={handleActivityAdded} />
-              )}
-
-              {activeTab === "rag" && (
-                <PaperRag onActivityAdded={handleActivityAdded} />
-              )}
-            </div>
-          </div>
-        </main>
+          </main>
+        </div>
       </div>
     </div>
+  );
+}
+
+const iconChipStyle: React.CSSProperties = {
+  width: 46,
+  height: 46,
+  borderRadius: 14,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flexShrink: 0,
+  background:
+    "linear-gradient(135deg, rgba(139,108,255,.25), rgba(94,242,168,.14))",
+  border: "1px solid rgba(139,108,255,.35)",
+  color: "#c9baff",
+};
+
+function StatTile({
+  label,
+  value,
+  positive = false,
+}: {
+  label: string;
+  value: number | string;
+  positive?: boolean;
+}) {
+  return (
+    <div
+      style={{
+        padding: "10px 12px",
+        borderRadius: 12,
+        background: positive ? "rgba(94,242,168,.05)" : "rgba(139,108,255,.05)",
+        border: positive
+          ? "1px solid rgba(94,242,168,.2)"
+          : "1px solid rgba(139,108,255,.2)",
+        textAlign: "center",
+        display: "flex",
+        flexDirection: "column",
+        gap: 4,
+        minWidth: 0,
+      }}
+    >
+      <span
+        style={{
+          fontFamily: "'Space Mono', ui-monospace, monospace",
+          fontSize: 9,
+          letterSpacing: "0.22em",
+          textTransform: "uppercase",
+          color: "#5c6180",
+        }}
+      >
+        {label}
+      </span>
+      <strong
+        style={{
+          fontFamily: "'Archivo Expanded', 'Archivo', sans-serif",
+          fontWeight: 800,
+          fontSize: 18,
+          color: positive ? "#5ef2a8" : "#eef0fb",
+          letterSpacing: "0.02em",
+        }}
+      >
+        {value}
+      </strong>
+    </div>
+  );
+}
+
+function OrbitMark() {
+  return (
+    <svg
+      viewBox="0 0 32 32"
+      style={{ width: 26, height: 26, flex: "none" }}
+      aria-hidden
+    >
+      <circle
+        cx="16"
+        cy="16"
+        r="7.5"
+        fill="none"
+        stroke="#eef0fb"
+        strokeWidth="1.5"
+      />
+      <ellipse
+        cx="16"
+        cy="16"
+        rx="14"
+        ry="5"
+        fill="none"
+        stroke="#5ef2a8"
+        strokeWidth="1.3"
+        transform="rotate(-24 16 16)"
+      />
+      <circle cx="27.5" cy="9.5" r="1.6" fill="#8b6cff" />
+    </svg>
   );
 }
