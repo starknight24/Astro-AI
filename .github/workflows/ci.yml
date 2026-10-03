@@ -19,8 +19,16 @@ jobs:
           cache: npm
           cache-dependency-path: api/package-lock.json
       - run: npm ci
-      - run: npx eslint src/
+      # Production dependencies only: a dev-tooling advisory should not block a
+      # deploy, but a vulnerable runtime dependency should. Dev advisories are
+      # reviewed in docs/security-review.md (A06).
+      - name: Dependency advisories (production)
+        run: npm audit --omit=dev --audit-level=moderate
+      - run: npx eslint src/ scripts/
       - run: npx tsc --noEmit
+      # No network and no database: the model client, fetch and the pg pool are
+      # injected or mocked, so CI needs no secrets.
+      - run: npm test
       - run: npm run build
 
   web:
@@ -36,6 +44,8 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
       - run: npm ci
+      - name: Dependency advisories (production)
+        run: npm audit --omit=dev --audit-level=moderate
       - run: npx eslint src/
       - run: npx tsc --noEmit
       - run: npm run build
@@ -51,7 +61,9 @@ jobs:
         with:
           python-version: '3.12'
           cache: pip
-          cache-dependency-path: science/requirements.txt
-      - run: pip install -r requirements.txt
-      - run: pip install pytest
-      - run: pytest -q || [ $? -eq 5 ]
+          cache-dependency-path: science/requirements*.txt
+      # requirements-dev pins pytest and httpx (FastAPI's TestClient needs it).
+      - run: pip install -r requirements-dev.txt
+      # Every test is offline: the ISS routes are served a committed TLE fixture
+      # and a network call inside a test is an assertion failure.
+      - run: pytest -q

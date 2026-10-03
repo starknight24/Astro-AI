@@ -1,0 +1,31 @@
+# Dependency updates. docs/security-review.md (A06) recorded "no automated
+# dependency scanning" as the largest remaining security gap; this plus the
+# `npm audit` step in CI closes it.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /api
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 5
+    groups:
+      # One PR for patch/minor bumps keeps the review load sane; majors come
+      # separately because they need thought.
+      minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directory: /web
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: pip
+    directory: /science
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 3
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: monthly }
