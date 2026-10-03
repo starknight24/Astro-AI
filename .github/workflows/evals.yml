@@ -1,0 +1,125 @@
+name: Evals
+
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: "Which suite to run"
+        type: choice
+        options: [physics-smoke, physics-full, rag-retrieval, rag-full]
+        default: physics-smoke
+      model:
+        description: "AGENT_MODEL / RAG_MODEL override (blank = default)"
+        type: string
+        default: ""
+
+# Two tiers, split by what they cost.
+#
+# On every PR: the parts that need no API quota at all — dataset integrity and
+# the grading logic. 46 pure-function tests, a few seconds.
+#
+# On demand: the parts that call a model. Gemini's free tier allows 20
+# generateContent requests per day PER MODEL (measured), and a 15-question
+# physics smoke run costs 45 — more than two days of budget. Running that on
+# every PR would exhaust the quota and then report failures that are quota, not
+# regressions. So it is workflow_dispatch, and the PR tier is what can honestly
+# be green every time. See ADR-007.
+jobs:
+  dataset-integrity:
+    name: Dataset integrity & grading logic (no API calls)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: science/requirements*.txt
+      - run: pip install -r science/requirements-dev.txt
+      - name: Regenerate the physics dataset and assert it is unchanged
+        # The dataset is generated from science/orbital.py. If the engine changes,
+        # the committed expected values are stale and every later number is wrong.
+        run: |
+          python3 evals/build_physics_dataset.py
+          git diff --exit-code evals/datasets/physics_golden.json \
+            || { echo "::error::physics_golden.json is stale — the engine changed. Commit the regenerated dataset."; exit 1; }
+      - name: Eval harness tests
+        run: cd evals && python3 -m pytest -q
+
+  model-eval:
+    name: ${{ inputs.suite }}
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: science/requirements*.txt
+
+      - name: Install
+        run: |
+          pip install -r science/requirements-dev.txt
+          cd api && npm ci
+
+      - name: Start the science service
+        run: |
+          cd science
+          nohup python3 -m uvicorn main:app --host 127.0.0.1 --port 8000 --log-level warning &
+          for _ in $(seq 1 30); do curl -sf http://127.0.0.1:8000/health && break; sleep 1; done
+
+      - name: Fetch the eval papers
+        if: startsWith(inputs.suite, 'rag')
+        run: |
+          mkdir -p evals/papers
+          for id in 2609.24534v1 2609.23496v1 2609.36042v1; do
+            curl -sL -A "AstroAI-ci/1.0" -o "evals/papers/$id.pdf" "https://arxiv.org/pdf/$id"
+          done
+
+      - name: Run the suite
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          SCIENCE_URL: http://127.0.0.1:8000
+          DATABASE_URL: postgres://unused:unused@127.0.0.1:5432/unused
+          SUPABASE_URL: https://unused.supabase.co
+          AGENT_MODEL: ${{ inputs.model }}
+          RAG_MODEL: ${{ inputs.model }}
+        run: |
+          if [ -z "$GEMINI_API_KEY" ]; then
+            echo "::error::GEMINI_API_KEY is not configured; cannot run a model eval."
+            exit 1
+          fi
+          case "${{ inputs.suite }}" in
+            physics-smoke) python3 evals/run_physics.py ;;
+            physics-full)  python3 evals/run_physics.py --full ;;
+            rag-retrieval) cd api && npx tsx scripts/run-rag-eval.ts --retrieval-only --label "ci ${{ github.sha }}" ;;
+            rag-full)      cd api && npx tsx scripts/run-rag-eval.ts --label "ci ${{ github.sha }}" ;;
+          esac
+
+      - name: Summarise
+        if: always()
+        run: |
+          latest=$(ls -t evals/results/*.json 2>/dev/null | head -1) || true
+          if [ -n "$latest" ]; then
+            {
+              echo "### ${{ inputs.suite }}"
+              echo
+              echo '```'
+              python3 evals/append_history.py "$latest"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eval-results-${{ inputs.suite }}
+          path: evals/results/*.json
+          if-no-files-found: warn

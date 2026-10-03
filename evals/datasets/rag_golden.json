@@ -1,0 +1,409 @@
+{
+ "papers": {
+  "facsat2": {
+   "arxiv_id": "2609.24534v1",
+   "pages": 20,
+   "title": "Premature re-entry of the FACSAT-2 nanosatellite: orbital decay and attribution to the maximum of solar cycle 25"
+  },
+  "earthmoon": {
+   "arxiv_id": "2609.23496v1",
+   "pages": 24,
+   "title": "Designing 3D transfers: application to Earth-Moon"
+  },
+  "xraydoppler": {
+   "arxiv_id": "2609.36042v1",
+   "pages": 10,
+   "title": "First Detection of the Doppler Shift of X-ray Photons Due to a Telescope's Orbital Motion"
+  }
+ },
+ "cases": [
+  {
+   "id": "rag-001",
+   "paper": "facsat2",
+   "question": "What is the NORAD catalogue ID of FACSAT-2?",
+   "answerable": true,
+   "gold_pages": [
+    1,
+    2
+   ],
+   "gold_answer": "NORAD ID 56205",
+   "gold_section": "2. Data",
+   "kind": "fact",
+   "difficulty": "easy"
+  },
+  {
+   "id": "rag-002",
+   "paper": "facsat2",
+   "question": "On what date did FACSAT-2 re-enter the atmosphere?",
+   "answerable": true,
+   "gold_pages": [
+    1,
+    9
+   ],
+   "gold_answer": "27 October 2025",
+   "gold_section": "Abstract",
+   "kind": "fact",
+   "difficulty": "easy"
+  },
+  {
+   "id": "rag-003",
+   "paper": "facsat2",
+   "question": "How many days after deployment did FACSAT-2 re-enter?",
+   "answerable": true,
+   "gold_pages": [
+    1
+   ],
+   "gold_answer": "926 days",
+   "gold_section": "Abstract",
+   "kind": "fact",
+   "difficulty": "easy"
+  },
+  {
+   "id": "rag-004",
+   "paper": "facsat2",
+   "question": "What service life had been declared for the mission?",
+   "answerable": true,
+   "gold_pages": [
+    1
+   ],
+   "gold_answer": "at least five years (with an estimated orbital lifetime of fifteen)",
+   "gold_section": "Abstract",
+   "kind": "fact",
+   "difficulty": "easy"
+  },
+  {
+   "id": "rag-005",
+   "paper": "facsat2",
+   "question": "Which atmospheric density model did the authors use, and through which software package?",
+   "answerable": true,
+   "gold_pages": [
+    2,
+    3
+   ],
+   "gold_answer": "NRLMSISE-00 (Picone et al. 2002) via the Python package pymsis 0.12.0",
+   "gold_section": "3.1. Atmospheric density",
+   "kind": "method",
+   "difficulty": "medium"
+  },
+  {
+   "id": "rag-006",
+   "paper": "facsat2",
+   "question": "What median effective ballistic coefficient did the authors infer?",
+   "answerable": true,
+   "gold_pages": [
+    1,
+    6,
+    8,
+    9,
+    15,
+    16
+   ],
+   "gold_answer": "Beff = 72.3 kg/m^2",
+   "gold_section": "4.1. Trajectory and ballistic coefficient",
+   "kind": "number",
+   "difficulty": "medium"
+  },
+  {
+   "id": "rag-007",
+   "paper": "facsat2",
+   "question": "How many TLE sets were used, over what date range, and at what median cadence?",
+   "answerable": true,
+   "gold_pages": [
+    2,
+    3
+   ],
+   "gold_answer": "3696 sets between 18 April 2023 and 27 October 2025, median cadence 6.2 h",
+   "gold_section": "2. Data",
+   "kind": "number",
+   "difficulty": "medium"
+  },
+  {
+   "id": "rag-008",
+   "paper": "facsat2",
+   "question": "What form factor and mass was FACSAT-2?",
+   "answerable": true,
+   "gold_pages": [
+    1
+   ],
+   "gold_answer": "a 6U CubeSat of 7.49 kg",
+   "gold_section": "1. Introduction",
+   "kind": "fact",
+   "difficulty": "easy"
+  },
+  {
+   "id": "rag-009",
+   "paper": "facsat2",
+   "question": "How long did the satellite take to descend from 400 km to 300 km, compared with the final 180 km?",
+   "answerable": true,
+   "gold_pages": [
+    6
+   ],
+   "gold_answer": "234 days for 400->300 km, but only 25 days for the remaining 180 km",
+   "gold_section": "4.1. Trajectory and ballistic coefficient",
+   "kind": "number",
+   "difficulty": "hard"
+  },
+  {
+   "id": "rag-010",
+   "paper": "facsat2",
+   "question": "By what factor did the measured solar forcing shorten the orbital lifetime relative to the design-time forecast?",
+   "answerable": true,
+   "gold_pages": [
+    1,
+    9,
+    11,
+    13,
+    16
+   ],
+   "gold_answer": "a factor of about 1.52 (3.83 years forecast vs 2.53 years measured)",
+   "gold_section": "4.2. Counterfactuals and official figures",
+   "kind": "number",
+   "difficulty": "hard"
+  },
+  {
+   "id": "rag-011",
+   "paper": "facsat2",
+   "question": "What was the total contract cost of the FACSAT-2 mission in US dollars?",
+   "answerable": false,
+   "gold_pages": [],
+   "gold_answer": null,
+   "gold_section": null,
+   "kind": "absent-fact",
+   "difficulty": "easy",
+   "why_absent": "The paper discusses delta-v cost in m/s and mass cost, never a monetary figure."
+  },
+  {
+   "id": "rag-012",
+   "paper": "facsat2",
+   "question": "What downlink data rate in Mbps did the satellite's radio achieve?",
+   "answerable": false,
+   "gold_pages": [],
+   "gold_answer": null,
+   "gold_section": null,
+   "kind": "absent-fact",
+   "difficulty": "easy",
+   "why_absent": "'Mbps' and 'downlink' appear nowhere in the paper."
+  },
+  {
+   "id": "rag-013",
+   "paper": "earthmoon",
+   "question": "What altitude is the initial circular parking orbit around Earth?",
+   "answerable": true,
+   "gold_pages": [
+    3,
+    6,
+    10
+   ],
+   "gold_answer": "167 km (as designed for Apollo 11)",
+   "gold_section": "2. Non-planar Earth-Moon transfer model",
+   "kind": "number",
+   "difficulty": "easy"
+  },
+  {
+   "id": "rag-014",
+   "paper": "earthmoon",
+   "question": "What altitude is the final circular orbit around the Moon?",
+   "answerable": true,
+   "gold_pages": [
+    3,
+    6,
+    10
+   ],
+   "gold_answer": "100 km above the lunar surface",
+   "gold_section": "2.3. Initial and final circular parking orbits",
+   "kind": "number",
+   "difficulty": "easy"
+  },
+  {
+   "id": "rag-015",
+   "paper": "earthmoon",
+   "question": "What Earth-Moon orbital period does the model assume?",
+   "answerable": true,
+   "gold_pages": [
+    3
+   ],
+   "gold_answer": "27.32 days",
+   "gold_section": "2. Non-planar Earth-Moon transfer model",
+   "kind": "number",
+   "difficulty": "easy"
+  },
+  {
+   "id": "rag-016",
+   "paper": "earthmoon",
+   "question": "Which mathematical framework is used to embed the boundary conditions analytically?",
+   "answerable": true,
+   "gold_pages": [
+    1,
+    8
+   ],
+   "gold_answer": "the Theory of Functional Connections (TFC)",
+   "gold_section": "2.5. The overdetermined constraints technique based on TFC",
+   "kind": "method",
+   "difficulty": "medium"
+  },
+  {
+   "id": "rag-017",
+   "paper": "earthmoon",
+   "question": "What dynamical model is the transfer formulated in?",
+   "answerable": true,
+   "gold_pages": [
+    1,
+    3,
+    4
+   ],
+   "gold_answer": "the circular restricted three-body problem (CRTBP)",
+   "gold_section": "2. Non-planar Earth-Moon transfer model",
+   "kind": "method",
+   "difficulty": "easy"
+  },
+  {
+   "id": "rag-018",
+   "paper": "earthmoon",
+   "question": "What range of times of flight was investigated when studying how the initial inclination affects the final lunar inclination?",
+   "answerable": true,
+   "gold_pages": [
+    13
+   ],
+   "gold_answer": "between 2 days and 6 days",
+   "gold_section": "3.2. Crossing between inclinations",
+   "kind": "number",
+   "difficulty": "medium"
+  },
+  {
+   "id": "rag-019",
+   "paper": "earthmoon",
+   "question": "Which approximate approach do the authors compare their results against?",
+   "answerable": true,
+   "gold_pages": [
+    16,
+    19
+   ],
+   "gold_answer": "a Patched-Conics approach combined with a Hohmann transfer",
+   "gold_section": "3.3. Comparison with a Patched-Conics approach",
+   "kind": "method",
+   "difficulty": "medium"
+  },
+  {
+   "id": "rag-020",
+   "paper": "earthmoon",
+   "question": "What is the spacecraft's dry mass in kilograms?",
+   "answerable": false,
+   "gold_pages": [],
+   "gold_answer": null,
+   "gold_section": null,
+   "kind": "absent-fact",
+   "difficulty": "easy",
+   "why_absent": "The paper works in delta-v only; the string 'kg' does not appear anywhere."
+  },
+  {
+   "id": "rag-021",
+   "paper": "earthmoon",
+   "question": "Which launch vehicle is assumed for the mission?",
+   "answerable": false,
+   "gold_pages": [],
+   "gold_answer": null,
+   "gold_section": null,
+   "kind": "absent-fact",
+   "difficulty": "easy",
+   "why_absent": "'launch vehicle' appears nowhere; the study starts from a parking orbit."
+  },
+  {
+   "id": "rag-022",
+   "paper": "xraydoppler",
+   "question": "What effect did this paper detect for the first time?",
+   "answerable": true,
+   "gold_pages": [
+    1
+   ],
+   "gold_answer": "the redshifting and blueshifting of X-ray photons caused by an X-ray telescope's orbital motion around Earth",
+   "gold_section": "ABSTRACT",
+   "kind": "fact",
+   "difficulty": "easy"
+  },
+  {
+   "id": "rag-023",
+   "paper": "xraydoppler",
+   "question": "Which instrument's observations were analysed?",
+   "answerable": true,
+   "gold_pages": [
+    1,
+    4
+   ],
+   "gold_answer": "XRISM/Resolve",
+   "gold_section": "2.3. Application to XRISM Observations",
+   "kind": "fact",
+   "difficulty": "easy"
+  },
+  {
+   "id": "rag-024",
+   "paper": "xraydoppler",
+   "question": "What energy resolution R can current and planned calorimeter X-ray telescopes achieve?",
+   "answerable": true,
+   "gold_pages": [
+    1
+   ],
+   "gold_answer": "R = E/dE of about 1000",
+   "gold_section": "ABSTRACT",
+   "kind": "number",
+   "difficulty": "medium"
+  },
+  {
+   "id": "rag-025",
+   "paper": "xraydoppler",
+   "question": "How many XRISM observations were analysed, and of what kind of target?",
+   "answerable": true,
+   "gold_pages": [
+    2,
+    4
+   ],
+   "gold_answer": "four observations of galactic centre molecular clouds with narrow Fe K-alpha lines",
+   "gold_section": "2.3. Application to XRISM Observations",
+   "kind": "number",
+   "difficulty": "medium"
+  },
+  {
+   "id": "rag-026",
+   "paper": "xraydoppler",
+   "question": "What velocity difference was measured for G0.11-0.11 in observation 201052010?",
+   "answerable": true,
+   "gold_pages": [
+    6
+   ],
+   "gold_answer": "24 +/- 19 km/s",
+   "gold_section": "2.4. Statistical Significance of Results",
+   "kind": "number",
+   "difficulty": "hard"
+  },
+  {
+   "id": "rag-027",
+   "paper": "xraydoppler",
+   "question": "At what confidence level was the redshift modulation detected?",
+   "answerable": true,
+   "gold_pages": [
+    1,
+    4,
+    6,
+    7,
+    10
+   ],
+   "gold_answer": "the 95% level",
+   "gold_section": "3. DISCUSSION",
+   "kind": "number",
+   "difficulty": "medium"
+  },
+  {
+   "id": "rag-028",
+   "paper": "xraydoppler",
+   "question": "What is the total budgeted cost of the XRISM mission?",
+   "answerable": false,
+   "gold_pages": [],
+   "gold_answer": null,
+   "gold_section": null,
+   "kind": "absent-fact",
+   "difficulty": "easy",
+   "why_absent": "The word 'cost' does not appear in the paper."
+  }
+ ],
+ "label_rule": "gold_pages lists every page on which the answer is STATED, judged by whether a reader of that page alone could answer the question. Derived by searching the extracted text for the answer string and inspecting each hit's context; a page where the string appears in a reference list, figure caption or unrelated role is not gold. Labels were corrected once, uniformly across all 23 answerable cases, after an initial baseline run showed a 'miss' that was really an over-narrow label (rag-027: the 95% confidence level is stated on five pages, and the retriever returned two of them). See ADR-007.",
+ "dataset_version": "rag-golden-v2"
+}

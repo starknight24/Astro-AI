@@ -1,0 +1,602 @@
+[
+ {
+  "question": "What is the orbital period, in minutes, of a satellite in a circular orbit at an altitude of 200 km above Earth's surface?",
+  "expected_value": 88.494056,
+  "expected_unit": "min",
+  "tolerance": 0.01,
+  "topic": "orbital_period",
+  "difficulty": "easy",
+  "derivation": "orbital_period(200)['period_min']",
+  "id": "phys-001"
+ },
+ {
+  "question": "What is the orbital period, in minutes, of a satellite in a circular orbit at an altitude of 400 km above Earth's surface?",
+  "expected_value": 92.560405,
+  "expected_unit": "min",
+  "tolerance": 0.01,
+  "topic": "orbital_period",
+  "difficulty": "easy",
+  "derivation": "orbital_period(400)['period_min']",
+  "id": "phys-002"
+ },
+ {
+  "question": "What is the orbital period, in minutes, of a satellite in a circular orbit at an altitude of 600 km above Earth's surface?",
+  "expected_value": 96.687196,
+  "expected_unit": "min",
+  "tolerance": 0.01,
+  "topic": "orbital_period",
+  "difficulty": "easy",
+  "derivation": "orbital_period(600)['period_min']",
+  "id": "phys-003"
+ },
+ {
+  "question": "What is the orbital period, in minutes, of a satellite in a circular orbit at an altitude of 800 km above Earth's surface?",
+  "expected_value": 100.873559,
+  "expected_unit": "min",
+  "tolerance": 0.01,
+  "topic": "orbital_period",
+  "difficulty": "easy",
+  "derivation": "orbital_period(800)['period_min']",
+  "id": "phys-004"
+ },
+ {
+  "question": "What is the orbital period, in minutes, of a satellite in a circular orbit at an altitude of 1,000 km above Earth's surface?",
+  "expected_value": 105.118657,
+  "expected_unit": "min",
+  "tolerance": 0.01,
+  "topic": "orbital_period",
+  "difficulty": "easy",
+  "derivation": "orbital_period(1000)['period_min']",
+  "id": "phys-005"
+ },
+ {
+  "question": "What is the orbital period, in minutes, of a satellite in a circular orbit at an altitude of 2,000 km above Earth's surface?",
+  "expected_value": 127.198186,
+  "expected_unit": "min",
+  "tolerance": 0.01,
+  "topic": "orbital_period",
+  "difficulty": "medium",
+  "derivation": "orbital_period(2000)['period_min']",
+  "id": "phys-006"
+ },
+ {
+  "question": "What is the orbital period, in minutes, of a satellite in a circular orbit at an altitude of 5,000 km above Earth's surface?",
+  "expected_value": 201.310519,
+  "expected_unit": "min",
+  "tolerance": 0.01,
+  "topic": "orbital_period",
+  "difficulty": "medium",
+  "derivation": "orbital_period(5000)['period_min']",
+  "id": "phys-007"
+ },
+ {
+  "question": "What is the orbital period, in minutes, of a satellite in a circular orbit at an altitude of 10,000 km above Earth's surface?",
+  "expected_value": 347.661404,
+  "expected_unit": "min",
+  "tolerance": 0.01,
+  "topic": "orbital_period",
+  "difficulty": "medium",
+  "derivation": "orbital_period(10000)['period_min']",
+  "id": "phys-008"
+ },
+ {
+  "question": "What is the orbital period, in minutes, of a satellite in a circular orbit at an altitude of 20,000 km above Earth's surface?",
+  "expected_value": 710.601156,
+  "expected_unit": "min",
+  "tolerance": 0.01,
+  "topic": "orbital_period",
+  "difficulty": "medium",
+  "derivation": "orbital_period(20000)['period_min']",
+  "id": "phys-009"
+ },
+ {
+  "question": "What is the orbital period, in hours, of a satellite in a circular orbit at an altitude of 35,786 km above Earth's surface?",
+  "expected_value": 23.934442,
+  "expected_unit": "h",
+  "tolerance": 0.01,
+  "topic": "orbital_period",
+  "difficulty": "medium",
+  "derivation": "orbital_period(35786)['period_s'] / 3600",
+  "id": "phys-010"
+ },
+ {
+  "question": "What is the orbital speed, in km/s, of a satellite in a circular orbit at an altitude of 200 km above Earth's surface?",
+  "expected_value": 7.784262,
+  "expected_unit": "km/s",
+  "tolerance": 0.01,
+  "topic": "orbital_velocity",
+  "difficulty": "easy",
+  "derivation": "orbital_velocity(200)['velocity_kms']",
+  "id": "phys-011"
+ },
+ {
+  "question": "What is the orbital speed, in km/s, of a satellite in a circular orbit at an altitude of 400 km above Earth's surface?",
+  "expected_value": 7.668558,
+  "expected_unit": "km/s",
+  "tolerance": 0.01,
+  "topic": "orbital_velocity",
+  "difficulty": "easy",
+  "derivation": "orbital_velocity(400)['velocity_kms']",
+  "id": "phys-012"
+ },
+ {
+  "question": "What is the orbital speed, in km/s, of a satellite in a circular orbit at an altitude of 600 km above Earth's surface?",
+  "expected_value": 7.557865,
+  "expected_unit": "km/s",
+  "tolerance": 0.01,
+  "topic": "orbital_velocity",
+  "difficulty": "easy",
+  "derivation": "orbital_velocity(600)['velocity_kms']",
+  "id": "phys-013"
+ },
+ {
+  "question": "What is the orbital speed, in km/s, of a satellite in a circular orbit at an altitude of 800 km above Earth's surface?",
+  "expected_value": 7.451831,
+  "expected_unit": "km/s",
+  "tolerance": 0.01,
+  "topic": "orbital_velocity",
+  "difficulty": "easy",
+  "derivation": "orbital_velocity(800)['velocity_kms']",
+  "id": "phys-014"
+ },
+ {
+  "question": "What is the orbital speed, in km/s, of a satellite in a circular orbit at an altitude of 1,000 km above Earth's surface?",
+  "expected_value": 7.350139,
+  "expected_unit": "km/s",
+  "tolerance": 0.01,
+  "topic": "orbital_velocity",
+  "difficulty": "easy",
+  "derivation": "orbital_velocity(1000)['velocity_kms']",
+  "id": "phys-015"
+ },
+ {
+  "question": "What is the orbital speed, in km/s, of a satellite in a circular orbit at an altitude of 2,000 km above Earth's surface?",
+  "expected_value": 6.897555,
+  "expected_unit": "km/s",
+  "tolerance": 0.01,
+  "topic": "orbital_velocity",
+  "difficulty": "easy",
+  "derivation": "orbital_velocity(2000)['velocity_kms']",
+  "id": "phys-016"
+ },
+ {
+  "question": "What is the orbital speed, in km/s, of a satellite in a circular orbit at an altitude of 5,000 km above Earth's surface?",
+  "expected_value": 5.918795,
+  "expected_unit": "km/s",
+  "tolerance": 0.01,
+  "topic": "orbital_velocity",
+  "difficulty": "easy",
+  "derivation": "orbital_velocity(5000)['velocity_kms']",
+  "id": "phys-017"
+ },
+ {
+  "question": "What is the orbital speed, in km/s, of a satellite in a circular orbit at an altitude of 10,000 km above Earth's surface?",
+  "expected_value": 4.93329,
+  "expected_unit": "km/s",
+  "tolerance": 0.01,
+  "topic": "orbital_velocity",
+  "difficulty": "easy",
+  "derivation": "orbital_velocity(10000)['velocity_kms']",
+  "id": "phys-018"
+ },
+ {
+  "question": "What is the escape velocity, in km/s, from an altitude of 0 km above Earth's surface?",
+  "expected_value": 11.179875,
+  "expected_unit": "km/s",
+  "tolerance": 0.01,
+  "topic": "escape_velocity",
+  "difficulty": "easy",
+  "derivation": "escape_velocity(0)['escape_velocity_kms']",
+  "id": "phys-019"
+ },
+ {
+  "question": "What is the escape velocity, in km/s, from an altitude of 200 km above Earth's surface?",
+  "expected_value": 11.008609,
+  "expected_unit": "km/s",
+  "tolerance": 0.01,
+  "topic": "escape_velocity",
+  "difficulty": "medium",
+  "derivation": "escape_velocity(200)['escape_velocity_kms']",
+  "id": "phys-020"
+ },
+ {
+  "question": "What is the escape velocity, in km/s, from an altitude of 400 km above Earth's surface?",
+  "expected_value": 10.844979,
+  "expected_unit": "km/s",
+  "tolerance": 0.01,
+  "topic": "escape_velocity",
+  "difficulty": "medium",
+  "derivation": "escape_velocity(400)['escape_velocity_kms']",
+  "id": "phys-021"
+ },
+ {
+  "question": "What is the escape velocity, in km/s, from an altitude of 1,000 km above Earth's surface?",
+  "expected_value": 10.394666,
+  "expected_unit": "km/s",
+  "tolerance": 0.01,
+  "topic": "escape_velocity",
+  "difficulty": "medium",
+  "derivation": "escape_velocity(1000)['escape_velocity_kms']",
+  "id": "phys-022"
+ },
+ {
+  "question": "What is the escape velocity, in km/s, from an altitude of 10,000 km above Earth's surface?",
+  "expected_value": 6.976725,
+  "expected_unit": "km/s",
+  "tolerance": 0.01,
+  "topic": "escape_velocity",
+  "difficulty": "medium",
+  "derivation": "escape_velocity(10000)['escape_velocity_kms']",
+  "id": "phys-023"
+ },
+ {
+  "question": "What is the escape velocity, in km/s, from an altitude of 35,786 km above Earth's surface?",
+  "expected_value": 4.348228,
+  "expected_unit": "km/s",
+  "tolerance": 0.01,
+  "topic": "escape_velocity",
+  "difficulty": "medium",
+  "derivation": "escape_velocity(35786)['escape_velocity_kms']",
+  "id": "phys-024"
+ },
+ {
+  "question": "A satellite is in an elliptical orbit with a perigee altitude of 200 km and an apogee altitude of 35,786 km. What is its speed, in km/s, at perigee?",
+  "expected_value": 10.238849,
+  "expected_unit": "km/s",
+  "tolerance": 0.01,
+  "topic": "vis_viva",
+  "difficulty": "hard",
+  "derivation": "vis_viva(200, 24371.137)['velocity_kms']  # a = R_EARTH + (200+35786)/2",
+  "id": "phys-025"
+ },
+ {
+  "question": "A satellite is in an elliptical orbit with a perigee altitude of 200 km and an apogee altitude of 35,786 km. What is its speed, in km/s, at apogee?",
+  "expected_value": 1.59739,
+  "expected_unit": "km/s",
+  "tolerance": 0.01,
+  "topic": "vis_viva",
+  "difficulty": "hard",
+  "derivation": "vis_viva(35786, 24371.137)['velocity_kms']  # a = R_EARTH + (200+35786)/2",
+  "id": "phys-026"
+ },
+ {
+  "question": "A satellite is in an elliptical orbit with a perigee altitude of 400 km and an apogee altitude of 35,786 km. What is its speed, in km/s, at perigee?",
+  "expected_value": 10.066031,
+  "expected_unit": "km/s",
+  "tolerance": 0.01,
+  "topic": "vis_viva",
+  "difficulty": "hard",
+  "derivation": "vis_viva(400, 24471.137)['velocity_kms']  # a = R_EARTH + (400+35786)/2",
+  "id": "phys-027"
+ },
+ {
+  "question": "A satellite is in an elliptical orbit with a perigee altitude of 400 km and an apogee altitude of 35,786 km. What is its speed, in km/s, at apogee?",
+  "expected_value": 1.618175,
+  "expected_unit": "km/s",
+  "tolerance": 0.01,
+  "topic": "vis_viva",
+  "difficulty": "hard",
+  "derivation": "vis_viva(35786, 24471.137)['velocity_kms']  # a = R_EARTH + (400+35786)/2",
+  "id": "phys-028"
+ },
+ {
+  "question": "A satellite is in an elliptical orbit with a perigee altitude of 300 km and an apogee altitude of 1,000 km. What is its speed, in km/s, at perigee?",
+  "expected_value": 7.915794,
+  "expected_unit": "km/s",
+  "tolerance": 0.01,
+  "topic": "vis_viva",
+  "difficulty": "hard",
+  "derivation": "vis_viva(300, 7028.137)['velocity_kms']  # a = R_EARTH + (300+1000)/2",
+  "id": "phys-029"
+ },
+ {
+  "question": "A satellite is in an elliptical orbit with a perigee altitude of 300 km and an apogee altitude of 1,000 km. What is its speed, in km/s, at apogee?",
+  "expected_value": 7.164784,
+  "expected_unit": "km/s",
+  "tolerance": 0.01,
+  "topic": "vis_viva",
+  "difficulty": "hard",
+  "derivation": "vis_viva(1000, 7028.137)['velocity_kms']  # a = R_EARTH + (300+1000)/2",
+  "id": "phys-030"
+ },
+ {
+  "question": "A satellite is in an elliptical orbit with a perigee altitude of 500 km and an apogee altitude of 20,000 km. What is its speed, in km/s, at perigee?",
+  "expected_value": 9.588126,
+  "expected_unit": "km/s",
+  "tolerance": 0.01,
+  "topic": "vis_viva",
+  "difficulty": "hard",
+  "derivation": "vis_viva(500, 16628.137)['velocity_kms']  # a = R_EARTH + (500+20000)/2",
+  "id": "phys-031"
+ },
+ {
+  "question": "A satellite is in an elliptical orbit with a perigee altitude of 500 km and an apogee altitude of 20,000 km. What is its speed, in km/s, at apogee?",
+  "expected_value": 2.500118,
+  "expected_unit": "km/s",
+  "tolerance": 0.01,
+  "topic": "vis_viva",
+  "difficulty": "hard",
+  "derivation": "vis_viva(20000, 16628.137)['velocity_kms']  # a = R_EARTH + (500+20000)/2",
+  "id": "phys-032"
+ },
+ {
+  "question": "What is the specific orbital energy, in km^2/s^2, of a circular orbit at an altitude of 200 km above Earth's surface?",
+  "expected_value": -30.297365,
+  "expected_unit": "km^2/s^2",
+  "tolerance": 0.01,
+  "topic": "specific_orbital_energy",
+  "difficulty": "medium",
+  "derivation": "specific_orbital_energy(6578.137)['specific_energy_kms2']",
+  "id": "phys-033"
+ },
+ {
+  "question": "What is the specific orbital energy, in km^2/s^2, of a circular orbit at an altitude of 400 km above Earth's surface?",
+  "expected_value": -29.403392,
+  "expected_unit": "km^2/s^2",
+  "tolerance": 0.01,
+  "topic": "specific_orbital_energy",
+  "difficulty": "medium",
+  "derivation": "specific_orbital_energy(6778.137)['specific_energy_kms2']",
+  "id": "phys-034"
+ },
+ {
+  "question": "What is the specific orbital energy, in km^2/s^2, of a circular orbit at an altitude of 1,000 km above Earth's surface?",
+  "expected_value": -27.012269,
+  "expected_unit": "km^2/s^2",
+  "tolerance": 0.01,
+  "topic": "specific_orbital_energy",
+  "difficulty": "medium",
+  "derivation": "specific_orbital_energy(7378.137)['specific_energy_kms2']",
+  "id": "phys-035"
+ },
+ {
+  "question": "What is the specific orbital energy, in km^2/s^2, of a circular orbit at an altitude of 5,000 km above Earth's surface?",
+  "expected_value": -17.516068,
+  "expected_unit": "km^2/s^2",
+  "tolerance": 0.01,
+  "topic": "specific_orbital_energy",
+  "difficulty": "medium",
+  "derivation": "specific_orbital_energy(11378.136999999999)['specific_energy_kms2']",
+  "id": "phys-036"
+ },
+ {
+  "question": "What is the specific orbital energy, in km^2/s^2, of a circular orbit at an altitude of 20,000 km above Earth's surface?",
+  "expected_value": -7.555508,
+  "expected_unit": "km^2/s^2",
+  "tolerance": 0.01,
+  "topic": "specific_orbital_energy",
+  "difficulty": "medium",
+  "derivation": "specific_orbital_energy(26378.137)['specific_energy_kms2']",
+  "id": "phys-037"
+ },
+ {
+  "question": "What is the specific orbital energy, in km^2/s^2, of a circular orbit at an altitude of 35,786 km above Earth's surface?",
+  "expected_value": -4.726771,
+  "expected_unit": "km^2/s^2",
+  "tolerance": 0.01,
+  "topic": "specific_orbital_energy",
+  "difficulty": "medium",
+  "derivation": "specific_orbital_energy(42164.137)['specific_energy_kms2']",
+  "id": "phys-038"
+ },
+ {
+  "question": "What is the total delta-v, in km/s, for a Hohmann transfer from a circular orbit at 200 km altitude to a circular orbit at 35,786 km altitude?",
+  "expected_value": 3.931859,
+  "expected_unit": "km/s",
+  "tolerance": 0.02,
+  "topic": "hohmann_transfer",
+  "difficulty": "easy",
+  "derivation": "abs(hohmann_transfer(200, 35786)['delta_v1_kms']) + abs(...['delta_v2_kms'])",
+  "id": "phys-039"
+ },
+ {
+  "question": "How long, in hours, does a Hohmann transfer from a circular orbit at 200 km altitude to a circular orbit at 35,786 km altitude take?",
+  "expected_value": 5.258867,
+  "expected_unit": "h",
+  "tolerance": 0.01,
+  "topic": "hohmann_transfer",
+  "difficulty": "easy",
+  "derivation": "hohmann_transfer(200, 35786)['transfer_time_s'] / 3600",
+  "id": "phys-040"
+ },
+ {
+  "question": "What is the total delta-v, in km/s, for a Hohmann transfer from a circular orbit at 400 km altitude to a circular orbit at 35,786 km altitude?",
+  "expected_value": 3.853959,
+  "expected_unit": "km/s",
+  "tolerance": 0.02,
+  "topic": "hohmann_transfer",
+  "difficulty": "easy",
+  "derivation": "abs(hohmann_transfer(400, 35786)['delta_v1_kms']) + abs(...['delta_v2_kms'])",
+  "id": "phys-041"
+ },
+ {
+  "question": "How long, in hours, does a Hohmann transfer from a circular orbit at 400 km altitude to a circular orbit at 35,786 km altitude take?",
+  "expected_value": 5.291267,
+  "expected_unit": "h",
+  "tolerance": 0.01,
+  "topic": "hohmann_transfer",
+  "difficulty": "easy",
+  "derivation": "hohmann_transfer(400, 35786)['transfer_time_s'] / 3600",
+  "id": "phys-042"
+ },
+ {
+  "question": "What is the total delta-v, in km/s, for a Hohmann transfer from a circular orbit at 300 km altitude to a circular orbit at 1,000 km altitude?",
+  "expected_value": 0.375389,
+  "expected_unit": "km/s",
+  "tolerance": 0.02,
+  "topic": "hohmann_transfer",
+  "difficulty": "medium",
+  "derivation": "abs(hohmann_transfer(300, 1000)['delta_v1_kms']) + abs(...['delta_v2_kms'])",
+  "id": "phys-043"
+ },
+ {
+  "question": "How long, in hours, does a Hohmann transfer from a circular orbit at 300 km altitude to a circular orbit at 1,000 km altitude take?",
+  "expected_value": 0.814402,
+  "expected_unit": "h",
+  "tolerance": 0.01,
+  "topic": "hohmann_transfer",
+  "difficulty": "medium",
+  "derivation": "hohmann_transfer(300, 1000)['transfer_time_s'] / 3600",
+  "id": "phys-044"
+ },
+ {
+  "question": "What is the total delta-v, in km/s, for a Hohmann transfer from a circular orbit at 500 km altitude to a circular orbit at 20,000 km altitude?",
+  "expected_value": 3.362689,
+  "expected_unit": "km/s",
+  "tolerance": 0.02,
+  "topic": "hohmann_transfer",
+  "difficulty": "medium",
+  "derivation": "abs(hohmann_transfer(500, 20000)['delta_v1_kms']) + abs(...['delta_v2_kms'])",
+  "id": "phys-045"
+ },
+ {
+  "question": "How long, in hours, does a Hohmann transfer from a circular orbit at 500 km altitude to a circular orbit at 20,000 km altitude take?",
+  "expected_value": 2.963766,
+  "expected_unit": "h",
+  "tolerance": 0.01,
+  "topic": "hohmann_transfer",
+  "difficulty": "medium",
+  "derivation": "hohmann_transfer(500, 20000)['transfer_time_s'] / 3600",
+  "id": "phys-046"
+ },
+ {
+  "question": "What is the total delta-v, in km/s, for a Hohmann transfer from a circular orbit at 1,000 km altitude to a circular orbit at 400 km altitude?",
+  "expected_value": 0.318276,
+  "expected_unit": "km/s",
+  "tolerance": 0.02,
+  "topic": "hohmann_transfer",
+  "difficulty": "hard",
+  "derivation": "abs(hohmann_transfer(1000, 400)['delta_v1_kms']) + abs(...['delta_v2_kms'])",
+  "id": "phys-047"
+ },
+ {
+  "question": "How long, in hours, does a Hohmann transfer from a circular orbit at 1,000 km altitude to a circular orbit at 400 km altitude take?",
+  "expected_value": 0.823108,
+  "expected_unit": "h",
+  "tolerance": 0.01,
+  "topic": "hohmann_transfer",
+  "difficulty": "hard",
+  "derivation": "hohmann_transfer(1000, 400)['transfer_time_s'] / 3600",
+  "id": "phys-048"
+ },
+ {
+  "question": "What is the total delta-v, in km/s, for a Hohmann transfer from a circular orbit at 400 km altitude to a circular orbit at 800 km altitude?",
+  "expected_value": 0.216682,
+  "expected_unit": "km/s",
+  "tolerance": 0.02,
+  "topic": "hohmann_transfer",
+  "difficulty": "medium",
+  "derivation": "abs(hohmann_transfer(400, 800)['delta_v1_kms']) + abs(...['delta_v2_kms'])",
+  "id": "phys-049"
+ },
+ {
+  "question": "How long, in hours, does a Hohmann transfer from a circular orbit at 400 km altitude to a circular orbit at 800 km altitude take?",
+  "expected_value": 0.805727,
+  "expected_unit": "h",
+  "tolerance": 0.01,
+  "topic": "hohmann_transfer",
+  "difficulty": "medium",
+  "derivation": "hohmann_transfer(400, 800)['transfer_time_s'] / 3600",
+  "id": "phys-050"
+ },
+ {
+  "question": "What is the total delta-v, in km/s, for a Hohmann transfer from a circular orbit at 200 km altitude to a circular orbit at 400 km altitude?",
+  "expected_value": 0.115697,
+  "expected_unit": "km/s",
+  "tolerance": 0.02,
+  "topic": "hohmann_transfer",
+  "difficulty": "hard",
+  "derivation": "abs(hohmann_transfer(200, 400)['delta_v1_kms']) + abs(...['delta_v2_kms'])",
+  "id": "phys-051"
+ },
+ {
+  "question": "How long, in hours, does a Hohmann transfer from a circular orbit at 200 km altitude to a circular orbit at 400 km altitude take?",
+  "expected_value": 0.75433,
+  "expected_unit": "h",
+  "tolerance": 0.01,
+  "topic": "hohmann_transfer",
+  "difficulty": "hard",
+  "derivation": "hohmann_transfer(200, 400)['transfer_time_s'] / 3600",
+  "id": "phys-052"
+ },
+ {
+  "question": "What is the total delta-v, in km/s, for a Hohmann transfer from a circular orbit at 400 km altitude to a circular orbit at 384,400 km altitude?",
+  "expected_value": 3.907033,
+  "expected_unit": "km/s",
+  "tolerance": 0.02,
+  "topic": "hohmann_transfer",
+  "difficulty": "hard",
+  "derivation": "abs(hohmann_transfer(400, 384400)['delta_v1_kms']) + abs(...['delta_v2_kms'])",
+  "id": "phys-053"
+ },
+ {
+  "question": "How long, in hours, does a Hohmann transfer from a circular orbit at 400 km altitude to a circular orbit at 384,400 km altitude take?",
+  "expected_value": 122.49868,
+  "expected_unit": "h",
+  "tolerance": 0.01,
+  "topic": "hohmann_transfer",
+  "difficulty": "hard",
+  "derivation": "hohmann_transfer(400, 384400)['transfer_time_s'] / 3600",
+  "id": "phys-054"
+ },
+ {
+  "question": "A satellite is in a circular orbit at 400 km altitude. How many orbits does it make in 24 hours? Give the exact fractional number of orbits, not a whole number.",
+  "expected_value": 15.557408,
+  "expected_unit": "orbits",
+  "tolerance": 0.01,
+  "topic": "derived",
+  "difficulty": "hard",
+  "derivation": "86400 / orbital_period(400)['period_s']",
+  "id": "phys-055"
+ },
+ {
+  "question": "What is the orbital speed, in km/h, of a satellite in a circular orbit at 400 km altitude above Earth's surface?",
+  "expected_value": 27606.809431,
+  "expected_unit": "km/h",
+  "tolerance": 0.01,
+  "topic": "derived",
+  "difficulty": "medium",
+  "derivation": "orbital_velocity(400)['velocity_kms'] * 3600",
+  "id": "phys-056"
+ },
+ {
+  "question": "By how much, in km/s, does the escape velocity at 400 km altitude exceed the circular orbital speed at the same altitude?",
+  "expected_value": 3.176421,
+  "expected_unit": "km/s",
+  "tolerance": 0.01,
+  "topic": "derived",
+  "difficulty": "hard",
+  "derivation": "escape_velocity(400)[...] - orbital_velocity(400)[...]",
+  "id": "phys-057"
+ },
+ {
+  "question": "What is the semi-major axis, in km, of a circular orbit at an altitude of 400 km above Earth's surface?",
+  "expected_value": 6778.137,
+  "expected_unit": "km",
+  "tolerance": 0.01,
+  "topic": "derived",
+  "difficulty": "easy",
+  "derivation": "orbital_period(400)['semi_major_axis_km']",
+  "id": "phys-058"
+ },
+ {
+  "question": "For a Hohmann transfer from 400 km altitude to geostationary altitude (35,786 km), what is the magnitude of the first burn, in km/s?",
+  "expected_value": 2.397473,
+  "expected_unit": "km/s",
+  "tolerance": 0.02,
+  "topic": "hohmann_transfer",
+  "difficulty": "medium",
+  "derivation": "abs(hohmann_transfer(400, 35786)['delta_v1_kms'])",
+  "id": "phys-059"
+ },
+ {
+  "question": "Earth's standard gravitational parameter is 398,600.4418 km^3/s^2. What is the orbital period, in minutes, of a circular orbit whose semi-major axis is exactly 7,000 km?",
+  "expected_value": 97.141944,
+  "expected_unit": "min",
+  "tolerance": 0.01,
+  "topic": "orbital_period",
+  "difficulty": "hard",
+  "derivation": "T = 2*pi*sqrt(a^3/mu) with a = 7000 km, directly",
+  "id": "phys-060"
+ }
+]
