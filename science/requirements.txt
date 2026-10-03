@@ -1,2 +1,8 @@
 fastapi==0.115.6
 uvicorn[standard]==0.34.0
+# SGP4 orbital propagation for ISS pass prediction (ADR-005): a specified model,
+# so the reference implementation is used rather than hand-written math.
+sgp4==2.27
+# PDF text extraction for the paper RAG pipeline (ADR-006). Used for both the
+# plain text and the font-size/weight signal that drives heading detection.
+pymupdf==1.27.2.3

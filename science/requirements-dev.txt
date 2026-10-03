@@ -1,0 +1,4 @@
+-r requirements.txt
+pytest==8.4.2
+# FastAPI's TestClient is a thin wrapper over httpx.
+httpx==0.28.1
