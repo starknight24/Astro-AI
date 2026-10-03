@@ -9,3 +9,11 @@ __pycache__/
 .env*
 !.env.example
 .claude/
+# Adversarial / eval run outputs (regenerated; docs carry the committed results)
+api/scripts/.out/
+# Eval corpus: third-party arXiv PDFs, downloaded by evals/papers/README.md
+evals/papers/*.pdf
+evals/results/
+# Python virtualenvs (science/.venv is the documented one; see docs/CONTRIBUTING.md)
+.venv/
+venv/
