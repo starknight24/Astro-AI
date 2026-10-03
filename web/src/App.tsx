@@ -6,6 +6,7 @@ import {
   ClipboardList,
   BookOpen,
   GraduationCap,
+  Bot,
   Clock,
   Trash2,
   Activity,
@@ -15,6 +16,7 @@ import {
 } from "lucide-react";
 
 import { AcademicLevel, SavedNote, StudentStats } from "./types";
+import AgentSolver from "./components/AgentSolver";
 import ConceptExplainer from "./components/ConceptExplainer";
 import OrbitalCalculator from "./components/OrbitalCalculator";
 import ProblemGenerator from "./components/ProblemGenerator";
@@ -57,8 +59,8 @@ export default function App() {
 
   const [degreeLevel, setDegreeLevel] = useState<AcademicLevel>("Bachelor");
   const [activeTab, setActiveTab] = useState<
-    "tutor" | "calc" | "problems" | "nasa" | "rag"
-  >("tutor");
+    "agent" | "tutor" | "calc" | "problems" | "nasa" | "rag"
+  >("agent");
 
   // Dashboard drawer / mobile toggle
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -153,6 +155,7 @@ export default function App() {
   };
 
   const tabs = [
+    { id: "agent", label: "Agent Solver", icon: Bot },
     { id: "tutor", label: "Space Tutor", icon: GraduationCap },
     { id: "calc", label: "Orbit Calculator", icon: Orbit },
     { id: "problems", label: "Problem Sets", icon: ClipboardList },
@@ -693,6 +696,13 @@ export default function App() {
               }}
             >
               <div style={{ maxWidth: 1280, margin: "0 auto", height: "100%" }}>
+                {activeTab === "agent" && (
+                  <AgentSolver
+                    onActivityAdded={handleActivityAdded}
+                    onSaveNote={handleSaveNote}
+                  />
+                )}
+
                 {activeTab === "tutor" && (
                   <ConceptExplainer
                     degreeLevel={degreeLevel}

@@ -12,7 +12,11 @@ import App from "./App.tsx";
 import Login from "./components/Login.tsx";
 import LandingPage from "./components/LandingPage.tsx";
 import { AuthProvider, useAuth } from "./lib/AuthContext.tsx";
+import { initObservability } from "./lib/observability.ts";
 import "./index.css";
+
+// Before the app renders, so a crash during the first render is reported.
+initObservability();
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { session, loading } = useAuth();

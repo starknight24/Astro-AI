@@ -1,6 +1,25 @@
-import React, { useState, useRef, useEffect } from "react";
-import { Upload, BookOpen, Brain, Send, Loader2, Sparkles } from "lucide-react";
-import { ResearchPaper, ChatMessage } from "../types";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import {
+  AlertTriangle,
+  BookOpen,
+  ChevronDown,
+  ChevronRight,
+  FileText,
+  Loader2,
+  Quote,
+  Send,
+  ShieldAlert,
+  Trash2,
+  Upload,
+} from "lucide-react";
+import type {
+  IngestResult,
+  PaperAnswer,
+  PaperCitation,
+  PaperSection,
+  PaperSummary,
+  PaperThreadMessage,
+} from "../types";
 import { apiFetch } from "../lib/api";
 
 interface PaperRagProps {
@@ -10,489 +29,608 @@ interface PaperRagProps {
   ) => void;
 }
 
-const PRELOADED_PAPERS: ResearchPaper[] = [
-  {
-    id: "jwst-l2",
-    title:
-      "Optical Alignment and Early Calibration of the James Webb Space Telescope at the Sun-Earth L2 Lagrange Point",
-    authors:
-      "Dr. Elena Vance, Senior Astrophysicist at Space Telescope Science Institute (STScI)",
-    abstract:
-      "This paper reports the initial optical alignment alignment and mid-infrared calibration results of the JWST primary mirror arrays following deployment to its halo orbit around Sun-Earth L2. We detail the wavefront sensing algorithms and multi-step phase retrieval processes utilized to align the 18 hexagonal beryllium segment mirrors down to diffraction-limited performance at 2 microns. Alignment telemetry indicates stable rms wavefront errors < 150 nm over 48-hour observational cycles.",
-    equations:
-      "$$WFE_{rms} = \\sqrt{\\frac{1}{A}\\iint_A [W(x,y) - \\bar{W}]^2 dxdy}$$ where $W(x,y)$ represents the wavefront phase map and $A$ is the aperture. Secondary mirror corrective impulse equation is given by: $$\\Delta z = C \\cdot \\vec{\\phi}_k$$",
-    methodology:
-      "Using primary mirror segment actuator controls in 6 degrees of freedom. Alignment checks performed via phase retrieval on the Near Infrared Camera (NIRCam) focal plane arrays. Hexagonal focus corrections deployed sequentially over a 14-day timeline.",
-    findings:
-      "The primary mirror array reached diffraction-limited alignment with total wavefront error measuring 137 nm, significantly exceeding the mission's pre-launch requirement of 150 nm. High-contrast coronagraph calibration confirms 10^-5 contrast levels at 1 arcsecond.",
-    contentSnippet:
-      "James Webb Space Telescope (JWST) is situated in a halo orbit around the Sun-Earth L2 point, approximately 1.5 million kilometers from Earth. This location is dynamically ideal because it isolates the cryogenic telescope from Earth and Solar infrared thermal backgrounds. Optical alignment of the 18 hexagonal primary mirror segments represents one of the greatest mechanical engineering challenges. Segment phasing was achieved using dispersed Hartmann sensing (DHS) and weak lenses on the NIRCam instrument. Telemetry reveals that thermal variations across the sunshield cause a slowly drifting thermal wavefront error of approximately 10 nm over a 24-hour cycle.",
-  },
-  {
-    id: "hohmann-multi",
-    title:
-      "Optimizing Hohmann Transfer Trajectories with Multi-Impulse Mid-Course Correction Engines",
-    authors: "Prof. Arthur Pendelton, Department of Aerospace Engineering, MIT",
-    abstract:
-      "Traditional Hohmann transfer orbits assume two singular instantaneous burns at periapsis and apoapsis. This paper evaluates the delta-V efficiency gains achieved by integrating small mid-course corrections during low-thrust chemical transfers. Numerical simulations of transfers from Low Earth Orbit (LEO) to Geostationary Transfer Orbit (GTO) indicate that adding a third correction burn at the transfer orbit's true anomaly $\\theta = 90^\\circ$ minimizes inclination correction errors by up to 12.4% under severe launch vector dispersion.",
-    equations:
-      "$$\\Delta v_{total} = \\Delta v_1 + \\Delta v_2 + \\sum_{i=3}^n \\Delta v_{mid}$$ where $$\\Delta v_1 = v_{tx1} - v_{c1} = \\sqrt{\\mu \\left(\\frac{2}{r_1} - \\frac{1}{a_{tx}}\\right)} - \\sqrt{\\frac{\\mu}{r_1}}$$",
-    methodology:
-      "Conducted Monte Carlo simulations with 10,000 runs representing launch trajectory dispersion. Engine thrust models implemented using standard Runge-Kutta 4th-order orbital integration parameters with customized gravitational modeling.",
-    findings:
-      "While total theoretical delta-v remains constrained by standard vis-viva parameters, mid-course corrections decrease orbit correction margins on arrival at GEO. High-eccentricity solar radiation pressure perturbation was successfully mitigated.",
-    contentSnippet:
-      "Two-impulse Hohmann transfers assume absolute thrust duration equals zero (impulsive approximation). In actual chemical spacecraft execution, finite burn times lead to gravity losses. Mid-course correction maneuvers (MCCs) are scheduled using true anomaly milestones. For high inclination changes, conducting inclination change during the second burn at apoapsis (where speed is minimal) is optimal. Launch dispersion error covariance matrices demonstrate that without active mid-course adjustments, typical navigation systems miss GEO insertion windows by an average of 420 km.",
-  },
-  {
-    id: "m-dwarf-bio",
-    title:
-      "Spectroscopic Biosignature Analysis and Atmosphere Modeling of Exoplanets Orbiting M-Dwarf Systems",
-    authors:
-      "Sarah J. Thorne, Department of Astronomy and Astrobiology, York University",
-    abstract:
-      "M-dwarf stars are the most common hosts for rocky exoplanets, but their stellar flares present astrobiological hazards. This research models the atmospheric ozone and methane concentrations on a terrestrial exoplanet orbiting within the habitable zone of an active M-dwarf star. We simulate high-resolution transmission spectra (0.3 to 5 microns) to assess the detectability of simultaneous $O_3$ and $CH_4$ biosignatures using next-generation space telescope coronagraphs.",
-    equations:
-      "$$I(\\lambda) = I_0(\\lambda) \\cdot e^{-\\tau(\\lambda)}$$ where $\\tau(\\lambda) = \\int \\rho(z)\\sigma(\\lambda, z)dz$ is the optical depth along the transmission path $z$ with local atmospheric density $\\rho$.",
-    methodology:
-      "1D radiative-convective-photochemical modeling coupled with synthetic transmission spectra generators. Stellar UV flares modeled based on observations of Proxima Centauri.",
-    findings:
-      "Simultaneous detection of methane ($CH_4$) at 1.66 microns and ozone ($O_3$) at 9.6 microns represents a robust astrobiological biosignature. Flare events enhance ozone regeneration via high-energy photolysis.",
-    contentSnippet:
-      "Terrestrial exoplanets around M-dwarf stars are tidally locked, meaning they present the same face to the host star. This produces severe global temperature gradients. Global atmospheric circulation model (GCM) simulations indicate that atmospheric winds redistribute thermal energy to prevent nightside condensation. Spectroscopic observations during transit probe the exoplanet's atmosphere. Chemical networks show that methane, when combined with high ozone levels, cannot exist in thermodynamic equilibrium without active, biological surface emissions.",
-  },
-];
+/** Matches the API's own cap. */
+const MAX_PDF_BYTES = 15 * 1024 * 1024;
+
+interface Turn {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  citations: PaperCitation[];
+  outcome?: "answered" | "refused_unsupported" | "error";
+  /** Retrieval detail, shown on demand for the assistant's turns. */
+  answer?: PaperAnswer;
+}
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Could not read that file."));
+    reader.onload = () => {
+      const result = String(reader.result ?? "");
+      resolve(
+        result.includes(",") ? result.slice(result.indexOf(",") + 1) : result,
+      );
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function Citations({ citations }: { citations: PaperCitation[] }) {
+  if (citations.length === 0) return null;
+  return (
+    <div className="mt-3 space-y-2">
+      <div className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
+        Sources in this paper
+      </div>
+      {citations.map((c, i) => (
+        <div
+          key={`${c.chunk_index}-${c.page}-${i}`}
+          className="p-2.5 bg-slate-950/50 border border-slate-800 rounded-xl"
+        >
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] font-mono font-semibold text-indigo-300 bg-indigo-500/10 border border-indigo-500/25 rounded px-1.5 py-0.5">
+              p.{c.page}
+            </span>
+            {c.section && (
+              <span className="text-[10px] font-mono text-slate-500">
+                {c.section}
+              </span>
+            )}
+          </div>
+          {c.quote && (
+            <p className="mt-1.5 text-[11px] text-slate-300 italic leading-relaxed">
+              “{c.quote}”
+            </p>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function RetrievalDetail({ answer }: { answer: PaperAnswer }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="mt-3">
+      <button
+        onClick={() => setOpen(!open)}
+        className="inline-flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-slate-500 hover:text-slate-300"
+      >
+        {open ? (
+          <ChevronDown className="w-3 h-3" />
+        ) : (
+          <ChevronRight className="w-3 h-3" />
+        )}
+        retrieval detail
+      </button>
+      {open && (
+        <div className="mt-2 p-3 bg-slate-950/60 border border-slate-800 rounded-xl space-y-2">
+          <div className="text-[10px] font-mono text-slate-400">
+            {answer.retrieval.hybrid
+              ? "hybrid (vector + keyword)"
+              : "vector only"}{" "}
+            · top_k=
+            {answer.retrieval.topK} · {answer.context.length} chunks ·{" "}
+            {answer.model} · {(answer.duration_ms / 1000).toFixed(1)}s ·{" "}
+            {answer.tokens_in ?? "?"}/{answer.tokens_out ?? "?"} tok
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {answer.context.map((c) => (
+              <span
+                key={c.chunk_index}
+                className="text-[10px] font-mono text-slate-400 bg-slate-900/70 border border-slate-800 rounded px-1.5 py-0.5"
+                title={c.section ?? undefined}
+              >
+                #{c.chunk_index} p.{c.page}
+                {c.page_end !== c.page ? `-${c.page_end}` : ""} ·{" "}
+                {c.score.toFixed(4)}
+              </span>
+            ))}
+          </div>
+          {answer.rejected_citations.length > 0 && (
+            <div className="text-[10px] font-mono text-amber-300">
+              {answer.rejected_citations.length} citation(s) failed verification
+              and were dropped:{" "}
+              {answer.rejected_citations.map((r) => r.reason).join("; ")}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function PaperRag({ onActivityAdded }: PaperRagProps) {
-  const [selectedPaper, setSelectedPaper] = useState<ResearchPaper>(
-    PRELOADED_PAPERS[0],
-  );
-  const [papersList, setPapersList] =
-    useState<ResearchPaper[]>(PRELOADED_PAPERS);
+  const [papers, setPapers] = useState<PaperSummary[]>([]);
+  const [loadingPapers, setLoadingPapers] = useState(true);
+  const [selected, setSelected] = useState<PaperSummary | null>(null);
+  const [sections, setSections] = useState<PaperSection[]>([]);
 
-  // Custom upload state
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadNote, setUploadNote] = useState<string | null>(null);
 
-  // RAG Chat state
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
-    {
-      id: "rag-welcome",
-      role: "model",
-      text: "Welcome to the Scientific Paper RAG Workspace. Ask me any question specifically about the selected research paper. I will generate responses strictly grounded in the paper's actual text findings and formulas.",
-      timestamp: new Date(),
-    },
-  ]);
-  const [chatInput, setChatInput] = useState("");
-  const [chatLoading, setChatLoading] = useState(false);
+  const [turns, setTurns] = useState<Turn[]>([]);
+  const [question, setQuestion] = useState("");
+  const [asking, setAsking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const chatEndRef = useRef<HTMLDivElement>(null);
+  const endRef = useRef<HTMLDivElement>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatMessages]);
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [turns]);
 
-  const handleSelectPaper = (paper: ResearchPaper) => {
-    setSelectedPaper(paper);
-    setChatMessages([
-      {
-        id: "rag-welcome-new",
-        role: "model",
-        text: `Switched RAG workspace context to: "${paper.title}". Ask me any questions about its methodology, equations, or findings!`,
-        timestamp: new Date(),
-      },
-    ]);
-    onActivityAdded(
-      "chat",
-      `Loaded paper for RAG analysis: ${paper.title.substring(0, 30)}...`,
-    );
+  const loadPapers = useCallback(
+    async (isCancelled: () => boolean = () => false) => {
+      try {
+        const response = await apiFetch("/api/papers");
+        if (isCancelled()) return;
+        if (!response.ok)
+          throw new Error(`Could not load papers (${response.status}).`);
+        const data = (await response.json()) as { papers: PaperSummary[] };
+        if (isCancelled()) return;
+        setPapers(data.papers);
+        setSelected(
+          (current) =>
+            current ?? data.papers.find((p) => p.status === "ready") ?? null,
+        );
+      } catch (err) {
+        if (isCancelled()) return;
+        setError(err instanceof Error ? err.message : "Could not load papers.");
+      } finally {
+        if (!isCancelled()) setLoadingPapers(false);
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    // Fetch on mount. The state writes happen after the await, so this is a
+    // subscription to an external system rather than a synchronous cascade.
+    let cancelled = false;
+    void (async () => {
+      await loadPapers(() => cancelled);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [loadPapers]);
+
+  /** Load the paper's outline and existing conversation when it changes. */
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      if (!selected) {
+        if (!cancelled) {
+          setSections([]);
+          setTurns([]);
+        }
+        return;
+      }
+      try {
+        const [detail, thread] = await Promise.all([
+          apiFetch(`/api/papers/${selected.id}`),
+          apiFetch(`/api/papers/${selected.id}/thread`),
+        ]);
+        if (cancelled) return;
+        if (detail.ok) {
+          const data = (await detail.json()) as { sections: PaperSection[] };
+          setSections(data.sections);
+        }
+        if (thread.ok) {
+          const data = (await thread.json()) as {
+            messages: PaperThreadMessage[];
+          };
+          setTurns(
+            data.messages.map((m, i) => ({
+              id: `${m.created_at}-${i}`,
+              role: m.role,
+              content: m.content,
+              citations: m.citations ?? [],
+              outcome: m.outcome,
+            })),
+          );
+        }
+      } catch {
+        /* a missing outline is not worth an error banner */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [selected]);
+
+  const upload = async (file: File) => {
+    setError(null);
+    setUploadNote(null);
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
+      setError("Only PDF files can be ingested.");
+      return;
+    }
+    if (file.size > MAX_PDF_BYTES) {
+      setError(
+        `That PDF is ${(file.size / 1024 / 1024).toFixed(1)} MB; the limit is 15 MB.`,
+      );
+      return;
+    }
+    setUploading(true);
+    try {
+      const pdf_base64 = await fileToBase64(file);
+      const response = await apiFetch("/api/papers", {
+        method: "POST",
+        body: JSON.stringify({ filename: file.name, pdf_base64 }),
+      });
+      const data = (await response.json()) as IngestResult & { error?: string };
+      if (!response.ok)
+        throw new Error(data.error ?? `Upload failed (${response.status}).`);
+
+      setUploadNote(
+        data.deduplicated
+          ? `Already ingested — reusing ${data.chunk_count} chunks.`
+          : `Ingested ${data.page_count} pages into ${data.chunk_count} chunks across ${data.sections.length} sections.`,
+      );
+      await loadPapers();
+      setSelected({
+        id: data.paper_id,
+        title: data.title,
+        status: "ready",
+        page_count: data.page_count,
+        chunk_count: data.chunk_count,
+        warnings: data.warnings,
+        embedding_model: data.embedding_model,
+        chunk_config: {},
+        error: null,
+        created_at: new Date().toISOString(),
+      });
+      setTurns([]);
+      onActivityAdded("chat", `Ingested paper: ${data.title.substring(0, 36)}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upload failed.");
+    } finally {
+      setUploading(false);
+      if (fileInput.current) fileInput.current.value = "";
+    }
   };
 
-  // Drag and drop handers
+  const ask = async () => {
+    const text = question.trim();
+    if (!text || asking || !selected) return;
+    setQuestion("");
+    setError(null);
+    setTurns((prev) => [
+      ...prev,
+      { id: `u-${Date.now()}`, role: "user", content: text, citations: [] },
+    ]);
+    setAsking(true);
+    try {
+      const response = await apiFetch(`/api/papers/${selected.id}/ask`, {
+        method: "POST",
+        body: JSON.stringify({ question: text }),
+      });
+      const data = (await response.json()) as PaperAnswer & { error?: string };
+      if (!response.ok)
+        throw new Error(data.error ?? `Request failed (${response.status}).`);
+      setTurns((prev) => [
+        ...prev,
+        {
+          id: `a-${Date.now()}`,
+          role: "assistant",
+          content: data.answer,
+          citations: data.citations,
+          outcome: data.outcome,
+          answer: data,
+        },
+      ]);
+      onActivityAdded("chat", `Asked "${text.substring(0, 28)}" of a paper`);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "The question could not be answered.",
+      );
+    } finally {
+      setAsking(false);
+    }
+  };
+
+  const remove = async (paper: PaperSummary) => {
+    try {
+      const response = await apiFetch(`/api/papers/${paper.id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok && response.status !== 204) {
+        throw new Error(`Could not delete that paper (${response.status}).`);
+      }
+      if (selected?.id === paper.id) setSelected(null);
+      await loadPapers();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Delete failed.");
+    }
+  };
+
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
+    setDragActive(e.type === "dragenter" || e.type === "dragover");
   };
 
-  const handleDrop = async (e: React.DragEvent) => {
+  const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      await processUploadedFile(e.dataTransfer.files[0]);
-    }
-  };
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      await processUploadedFile(e.target.files[0]);
-    }
-  };
-
-  const processUploadedFile = async (file: File) => {
-    setUploading(true);
-    try {
-      // Simulate reading and parsing content text from the file
-      // In web applets, FileReader helps extract textual contents
-      const reader = new FileReader();
-      reader.onload = async (event) => {
-        const text =
-          (event.target?.result as string) ||
-          `This is parsed research data about space engineering on file ${file.name}`;
-
-        // Let's call the backend to summarize this paper using real Gemini API!
-        const response = await apiFetch(`/api/papers/summarize`, {
-          method: "POST",
-          body: JSON.stringify({ paperText: text, title: file.name }),
-        });
-        const summary = await response.json();
-        if (summary.error) throw new Error(summary.error);
-
-        const newPaper: ResearchPaper = {
-          id: `uploaded-${Date.now()}`,
-          title: file.name.replace(/\.[^/.]+$/, ""),
-          authors: "Uploaded Document User Workspace",
-          abstract: summary.abstract,
-          equations: summary.equations,
-          methodology: summary.methodology,
-          findings: summary.findings,
-          contentSnippet: text,
-        };
-
-        setPapersList((prev) => [...prev, newPaper]);
-        setSelectedPaper(newPaper);
-        setChatMessages([
-          {
-            id: "rag-uploaded-welcome",
-            role: "model",
-            text: `Successfully uploaded and analyzed "${file.name}"! I've extracted its scientific abstract, key LaTeX equations, methodology, and discoveries. Ask me anything about this paper.`,
-            timestamp: new Date(),
-          },
-        ]);
-        onActivityAdded(
-          "chat",
-          `Uploaded and RAG-processed custom paper: ${file.name}`,
-        );
-      };
-      reader.readAsText(file);
-    } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : "Failed to parse document";
-      alert(`Error reading file: ${message}`);
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleSendRagChat = async () => {
-    if (!chatInput.trim() || chatLoading) return;
-    const msg = chatInput;
-    setChatInput("");
-
-    const userMsg: ChatMessage = {
-      id: Date.now().toString(),
-      role: "user",
-      text: msg,
-      timestamp: new Date(),
-    };
-
-    setChatMessages((prev) => [...prev, userMsg]);
-    setChatLoading(true);
-
-    try {
-      const response = await apiFetch(`/api/papers/chat`, {
-        method: "POST",
-        body: JSON.stringify({
-          paperText:
-            selectedPaper.contentSnippet + " " + (selectedPaper.abstract || ""),
-          title: selectedPaper.title,
-          message: msg,
-          history: chatMessages
-            .slice(-8)
-            .map((m) => ({ role: m.role, text: m.text })),
-        }),
-      });
-
-      const data = await response.json();
-      if (data.error) throw new Error(data.error);
-
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          id: (Date.now() + 1).toString(),
-          role: "model",
-          text: data.text,
-          timestamp: new Date(),
-        },
-      ]);
-
-      onActivityAdded(
-        "chat",
-        `Queried paper RAG about: "${msg.substring(0, 25)}..."`,
-      );
-    } catch (err: unknown) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : "Failed to synchronize grounding models.";
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          id: (Date.now() + 1).toString(),
-          role: "model",
-          text: `⚠️ **RAG Query Error**: ${message}`,
-          timestamp: new Date(),
-        },
-      ]);
-    } finally {
-      setChatLoading(false);
-    }
-  };
-
-  const renderLaTeX = (text?: string) => {
-    if (!text) return null;
-    const blocks = text.split(/(\$\$.*?\$\$)/gs);
-    return blocks.map((block, idx) => {
-      if (block.startsWith("$$") && block.endsWith("$$")) {
-        return (
-          <div
-            key={idx}
-            className="my-2 p-2.5 bg-slate-900 border border-emerald-500/20 rounded font-mono text-emerald-400 overflow-x-auto text-center text-xs"
-          >
-            {block.slice(2, -2)}
-          </div>
-        );
-      }
-
-      const inlines = block.split(/(\$.*?\$)/g);
-      return (
-        <span key={idx}>
-          {inlines.map((sub, sIdx) => {
-            if (sub.startsWith("$") && sub.endsWith("$")) {
-              return (
-                <code
-                  key={sIdx}
-                  className="px-1 py-0.5 mx-0.5 bg-slate-900 border border-cyan-500/20 text-cyan-400 rounded font-mono text-xs"
-                >
-                  {sub.slice(1, -1)}
-                </code>
-              );
-            }
-            return sub;
-          })}
-        </span>
-      );
-    });
+    const file = e.dataTransfer.files?.[0];
+    if (file) void upload(file);
   };
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 h-[calc(100vh-8rem)]">
-      {/* Side Papers Library Shelf - Left (Col 3) */}
-      <div className="xl:col-span-3 flex flex-col gap-4 border border-slate-800 rounded-2xl bg-slate-950/60 p-4 overflow-y-auto">
-        <div className="flex items-center gap-2 pb-2 border-b border-slate-800">
-          <BookOpen className="w-5 h-5 text-indigo-400" />
-          <h3 className="font-display font-semibold text-white">
-            Space Library
-          </h3>
-        </div>
-
-        {/* Paper selector list */}
-        <div className="flex-1 flex flex-col gap-2 overflow-y-auto max-h-[300px] xl:max-h-none">
-          {papersList.map((p) => (
-            <button
-              key={p.id}
-              onClick={() => handleSelectPaper(p)}
-              className={`text-left p-3 rounded-xl border transition-all text-xs flex flex-col gap-1.5 ${
-                selectedPaper.id === p.id
-                  ? "bg-indigo-600/10 border-indigo-500/40 text-indigo-100"
-                  : "bg-slate-900/40 border-slate-800 text-slate-400 hover:text-slate-200"
-              }`}
-            >
-              <span className="font-bold text-slate-100 line-clamp-2">
-                {p.title}
-              </span>
-              <span className="text-[10px] opacity-80 italic line-clamp-1">
-                By: {p.authors}
-              </span>
-            </button>
-          ))}
-        </div>
-
-        {/* Drag and Drop Zone */}
+    <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6 h-full">
+      {/* Library */}
+      <div className="flex flex-col gap-4 min-w-0">
         <div
           onDragEnter={handleDrag}
           onDragOver={handleDrag}
           onDragLeave={handleDrag}
           onDrop={handleDrop}
-          className={`border-2 border-dashed rounded-xl p-4 text-center transition-all ${
+          className={`p-5 border-2 border-dashed rounded-2xl text-center transition-colors ${
             dragActive
-              ? "border-indigo-500 bg-indigo-500/5 text-indigo-300"
-              : "border-slate-800 bg-slate-950 text-slate-500 hover:border-slate-700"
+              ? "border-indigo-500 bg-indigo-500/5"
+              : "border-slate-800 bg-slate-900/40"
           }`}
         >
-          {uploading ? (
-            <div className="flex flex-col items-center gap-2 py-2">
-              <Loader2 className="w-5 h-5 animate-spin text-indigo-400" />
-              <span className="text-xs text-indigo-300">
-                Extracting PDF text...
-              </span>
-            </div>
-          ) : (
-            <label className="cursor-pointer flex flex-col items-center gap-1.5 py-1">
-              <Upload className="w-5 h-5 text-slate-400" />
-              <span className="text-xs font-semibold text-slate-300">
-                Add Scientific PDF / TXT
-              </span>
-              <span className="text-[10px] text-slate-500 font-mono uppercase">
-                Drag-and-drop or click
-              </span>
-              <input
-                type="file"
-                accept=".pdf,.txt"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-            </label>
-          )}
-        </div>
-      </div>
-
-      {/* Main Analyzer Paper Reader - Center (Col 5) */}
-      <div className="xl:col-span-5 flex flex-col border border-slate-800 rounded-2xl bg-slate-950/60 p-5 overflow-y-auto">
-        <div className="flex items-center gap-2 pb-3 border-b border-slate-800 mb-4 justify-between">
-          <div className="flex items-center gap-2">
-            <Brain className="w-5 h-5 text-indigo-400" />
-            <h3 className="font-display font-semibold text-white">
-              Auto-Extracted Syntheses
-            </h3>
-          </div>
-          <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 border border-emerald-500/20 rounded">
-            RAG Grounding Enabled
-          </span>
-        </div>
-
-        {/* Analyzed values */}
-        <div className="space-y-5 text-sm text-slate-300">
-          <div>
-            <h4 className="font-display font-bold text-white text-xs uppercase tracking-wider font-mono text-indigo-300 mb-1.5">
-              Abstract Summary
-            </h4>
-            <p className="leading-relaxed bg-slate-900/30 p-3.5 rounded-xl border border-slate-900 text-xs text-slate-300 font-sans">
-              {selectedPaper.abstract}
-            </p>
-          </div>
-
-          <div>
-            <h4 className="font-display font-bold text-white text-xs uppercase tracking-wider font-mono text-indigo-300 mb-1.5">
-              Core Physics Equations
-            </h4>
-            <div className="bg-slate-950/40 p-3 rounded-xl border border-slate-800">
-              {renderLaTeX(selectedPaper.equations)}
-            </div>
-          </div>
-
-          <div>
-            <h4 className="font-display font-bold text-white text-xs uppercase tracking-wider font-mono text-indigo-300 mb-1.5">
-              Methodology & Verification
-            </h4>
-            <p className="leading-relaxed text-xs">
-              {selectedPaper.methodology}
-            </p>
-          </div>
-
-          <div>
-            <h4 className="font-display font-bold text-white text-xs uppercase tracking-wider font-mono text-indigo-300 mb-1.5">
-              Key Findings & Accomplishments
-            </h4>
-            <p className="leading-relaxed text-xs text-emerald-300 font-medium">
-              ✓ {selectedPaper.findings}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* RAG conversational grounding chat - Right (Col 4) */}
-      <div className="xl:col-span-4 flex flex-col border border-slate-800 rounded-2xl bg-slate-950/40 overflow-hidden shadow-xl">
-        <div className="p-4 border-b border-slate-800 bg-slate-900/70 flex items-center gap-2 shrink-0">
-          <Sparkles className="w-4 h-4 text-indigo-400 animate-pulse" />
-          <div>
-            <h3 className="font-display font-semibold text-white text-xs">
-              Grounding Peer Reviewer
-            </h3>
-            <p className="text-[10px] text-slate-400 font-mono">
-              Anchored specifically to this paper
-            </p>
-          </div>
-        </div>
-
-        {/* Chat Feed */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-950/20">
-          {chatMessages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`flex gap-2.5 max-w-[90%] ${msg.role === "user" ? "ml-auto justify-end" : "mr-auto"}`}
-            >
-              <div
-                className={`p-3 rounded-xl text-xs border ${
-                  msg.role === "user"
-                    ? "bg-indigo-600/10 border-indigo-500/30 text-indigo-100 rounded-tr-none"
-                    : "bg-slate-900/60 border-slate-800 text-slate-300 rounded-tl-none"
-                }`}
-              >
-                <div className="whitespace-pre-wrap leading-relaxed">
-                  {renderLaTeX(msg.text)}
-                </div>
-              </div>
-            </div>
-          ))}
-          {chatLoading && (
-            <div className="flex gap-2 max-w-[80%] mr-auto">
-              <div className="p-3 bg-slate-900/60 border border-slate-800 rounded-xl rounded-tl-none">
-                <div className="flex items-center gap-1.5">
-                  <span
-                    className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"
-                    style={{ animationDelay: "0ms" }}
-                  />
-                  <span
-                    className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"
-                    style={{ animationDelay: "150ms" }}
-                  />
-                  <span
-                    className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"
-                    style={{ animationDelay: "300ms" }}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-          <div ref={chatEndRef} />
-        </div>
-
-        {/* Send panel */}
-        <div className="p-3 border-t border-slate-800 bg-slate-950/80 flex gap-2">
+          <Upload className="w-5 h-5 text-indigo-400 mx-auto" />
+          <p className="mt-2 text-xs text-slate-300">Drop a PDF, or</p>
+          <button
+            onClick={() => fileInput.current?.click()}
+            disabled={uploading}
+            className="mt-2 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold rounded-lg inline-flex items-center gap-1.5"
+          >
+            {uploading ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Extracting &
+                embedding…
+              </>
+            ) : (
+              <>choose a file</>
+            )}
+          </button>
           <input
-            type="text"
-            value={chatInput}
-            onChange={(e) => setChatInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleSendRagChat();
+            ref={fileInput}
+            type="file"
+            accept="application/pdf,.pdf"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) void upload(file);
             }}
-            disabled={chatLoading}
-            placeholder="Ask about this paper's findings, math errors..."
-            className="flex-1 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-0"
+          />
+          <p className="mt-2 text-[10px] font-mono text-slate-600">
+            PDF with a text layer, ≤15 MB
+          </p>
+        </div>
+
+        {uploadNote && (
+          <div className="p-3 bg-emerald-500/5 border border-emerald-500/25 rounded-xl text-[11px] text-emerald-200">
+            {uploadNote}
+          </div>
+        )}
+
+        <div className="flex flex-col gap-2">
+          <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
+            Your papers
+          </span>
+          {loadingPapers ? (
+            <div className="text-xs text-slate-500 flex items-center gap-2">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" /> loading…
+            </div>
+          ) : papers.length === 0 ? (
+            <p className="text-[11px] text-slate-500 italic leading-relaxed">
+              No papers yet. Upload one to start a cited conversation about it.
+            </p>
+          ) : (
+            papers.map((paper) => {
+              const active = selected?.id === paper.id;
+              return (
+                <div
+                  key={paper.id}
+                  className={`p-3 rounded-xl border transition-colors ${
+                    active
+                      ? "bg-indigo-500/10 border-indigo-500/40"
+                      : "bg-slate-900/50 border-slate-800 hover:border-slate-700"
+                  }`}
+                >
+                  <div className="flex items-start gap-2">
+                    <button
+                      onClick={() => setSelected(paper)}
+                      className="min-w-0 flex-1 text-left"
+                      disabled={paper.status !== "ready"}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <FileText className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                        <span className="text-xs text-slate-200 font-medium line-clamp-2">
+                          {paper.title}
+                        </span>
+                      </div>
+                      <div className="mt-1 text-[10px] font-mono text-slate-500">
+                        {paper.status === "ready"
+                          ? `${paper.page_count ?? "?"} pages · ${paper.chunk_count ?? "?"} chunks`
+                          : paper.status}
+                      </div>
+                      {paper.error && (
+                        <div className="mt-1 text-[10px] text-rose-300">
+                          {paper.error}
+                        </div>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => void remove(paper)}
+                      title="Delete paper"
+                      className="shrink-0 p-1 text-slate-600 hover:text-rose-300 rounded"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {selected && selected.warnings.length > 0 && (
+          <div className="p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl space-y-1">
+            <div className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-amber-300">
+              <AlertTriangle className="w-3 h-3" /> extraction notes
+            </div>
+            {selected.warnings.map((w, i) => (
+              <div key={i} className="text-[11px] text-amber-200/90">
+                {w}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {sections.length > 0 && (
+          <div className="p-3 bg-slate-900/40 border border-slate-800 rounded-xl">
+            <div className="text-[10px] font-mono uppercase tracking-wider text-slate-500 mb-1.5">
+              Sections detected ({sections.length})
+            </div>
+            <div className="max-h-44 overflow-y-auto space-y-0.5">
+              {sections.map((s) => (
+                <div
+                  key={s.index}
+                  className="text-[10.5px] text-slate-400 truncate"
+                >
+                  {s.path}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Conversation */}
+      <div className="flex flex-col gap-4 min-w-0">
+        <div className="p-5 bg-slate-900/60 border border-slate-800 rounded-2xl backdrop-blur-md">
+          <div className="flex items-center gap-2">
+            <BookOpen className="w-5 h-5 text-indigo-400" />
+            <h3 className="font-display font-semibold text-white text-sm">
+              {selected ? selected.title : "Paper Q&A"}
+            </h3>
+          </div>
+          <p className="mt-2 text-xs text-slate-400 leading-relaxed">
+            Answers come only from the selected paper, with the page each claim
+            is on. Every page number is checked against the retrieved text
+            before it is shown — and when the paper does not contain the answer,
+            you get a refusal rather than a guess.
+          </p>
+        </div>
+
+        {error && (
+          <div className="p-3 bg-rose-500/5 border border-rose-500/25 rounded-xl text-xs text-rose-200">
+            {error}
+          </div>
+        )}
+
+        <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-1">
+          {!selected ? (
+            <p className="text-xs text-slate-500 italic">
+              Select or upload a paper to begin.
+            </p>
+          ) : turns.length === 0 ? (
+            <p className="text-xs text-slate-500 italic">
+              Ask anything about this paper — its methods, its numbers, its
+              conclusions.
+            </p>
+          ) : (
+            turns.map((turn) =>
+              turn.role === "user" ? (
+                <div key={turn.id} className="flex justify-end">
+                  <div className="max-w-[85%] p-3 bg-indigo-600/20 border border-indigo-500/30 rounded-2xl rounded-br-sm">
+                    <p className="text-xs text-slate-100 leading-relaxed">
+                      {turn.content}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div key={turn.id} className="flex justify-start">
+                  <div
+                    className={`max-w-[92%] p-3.5 rounded-2xl rounded-bl-sm border ${
+                      turn.outcome === "refused_unsupported"
+                        ? "bg-amber-500/5 border-amber-500/25"
+                        : turn.outcome === "error"
+                          ? "bg-rose-500/5 border-rose-500/25"
+                          : "bg-slate-900/70 border-slate-800"
+                    }`}
+                  >
+                    {turn.outcome === "refused_unsupported" && (
+                      <div className="flex items-center gap-1.5 mb-1.5 text-[10px] font-mono uppercase tracking-wider text-amber-300">
+                        <ShieldAlert className="w-3 h-3" /> not supported by
+                        this paper
+                      </div>
+                    )}
+                    {turn.outcome === "answered" && (
+                      <div className="flex items-center gap-1.5 mb-1.5 text-[10px] font-mono uppercase tracking-wider text-emerald-300">
+                        <Quote className="w-3 h-3" /> grounded in{" "}
+                        {turn.citations.length} passage
+                        {turn.citations.length === 1 ? "" : "s"}
+                      </div>
+                    )}
+                    <p className="text-xs text-slate-100 leading-relaxed whitespace-pre-wrap">
+                      {turn.content}
+                    </p>
+                    {turn.answer?.missing && (
+                      <p className="mt-2 text-[11px] text-amber-200/90 leading-relaxed">
+                        {turn.answer.missing}
+                      </p>
+                    )}
+                    <Citations citations={turn.citations} />
+                    {turn.answer && <RetrievalDetail answer={turn.answer} />}
+                  </div>
+                </div>
+              ),
+            )
+          )}
+          {asking && (
+            <div className="flex items-center gap-2 text-[11px] text-slate-500 font-mono">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" /> retrieving
+              passages and composing a cited answer…
+            </div>
+          )}
+          <div ref={endRef} />
+        </div>
+
+        <div className="flex gap-2">
+          <input
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                void ask();
+              }
+            }}
+            disabled={!selected || asking}
+            maxLength={2000}
+            placeholder={
+              selected
+                ? "Ask a question about this paper…"
+                : "Select a paper first"
+            }
+            className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none disabled:opacity-50"
           />
           <button
-            onClick={handleSendRagChat}
-            disabled={chatLoading || !chatInput.trim()}
-            className="p-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg transition-all"
+            onClick={() => void ask()}
+            disabled={!selected || asking || !question.trim()}
+            className="px-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl inline-flex items-center justify-center"
+            aria-label="Ask"
           >
-            <Send className="w-4 h-4" />
+            {asking ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
           </button>
         </div>
       </div>

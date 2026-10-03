@@ -1,14 +1,33 @@
 import "dotenv/config";
+// Must come before the modules Sentry instruments (http, express, pg).
+import {
+  initObservability,
+  reportError,
+  sentryErrorHandler,
+} from "./lib/observability";
+
+initObservability();
+
 import cors from "cors";
 import express from "express";
 import { GoogleGenAI, Type } from "@google/genai";
 import { requireAuth } from "./middleware/auth";
+import { RATE_LIMITS, rateLimit } from "./middleware/rateLimit";
+import agentRouter from "./routes/agent";
 import calculateRouter from "./routes/calculate";
+import metricsRouter from "./routes/metrics";
+import papersRouter from "./routes/papers";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3001;
 
+// Behind Render's proxy, so req.ip is the client rather than the proxy. Without
+// this, per-IP rate limiting would bucket every user together.
+if (process.env.NODE_ENV === "production") app.set("trust proxy", 1);
+
 app.use(cors({ origin: process.env.WEB_ORIGIN ?? true, credentials: true }));
+// 20 MB is for the image-editing and PDF-upload payloads only; see the per-route
+// limits below. Narrowing the global default is tracked in docs/SECURITY.md.
 app.use(express.json({ limit: "20mb" }));
 
 app.get("/", (_req, res) => {
@@ -16,8 +35,16 @@ app.get("/", (_req, res) => {
 });
 
 app.use("/api", requireAuth);
+// Broad allowance for everything authenticated; the expensive routes add their
+// own stricter bucket below.
+app.use("/api", rateLimit(RATE_LIMITS.api));
 
 app.use("/api/calculate", calculateRouter);
+// Three model calls per request: the tightest bucket in the system.
+app.use("/api/agent", rateLimit(RATE_LIMITS.agent), agentRouter);
+// PDF extraction plus an embedding call per 32 chunks.
+app.use("/api/papers", rateLimit(RATE_LIMITS.upload), papersRouter);
+app.use("/api/admin", metricsRouter);
 
 // ---------- Shared types & helpers ----------
 
@@ -656,6 +683,43 @@ Format the response strictly as a JSON object with fields:
 
 app.get("/health", (_req, res) => {
   res.status(200).json({ status: "ok" });
+});
+
+// ---------- Error handling ----------
+// Registered after every route, so an error thrown anywhere lands here.
+const sentryHandler = sentryErrorHandler();
+if (sentryHandler) app.use(sentryHandler);
+
+// Final safety net: a route that throws without its own try/catch must still
+// return a generic JSON error rather than Express's default HTML stack trace.
+app.use(
+  (
+    error: unknown,
+    req: express.Request,
+    res: express.Response,
+    // Express identifies an error handler by its FOUR-argument signature.
+    // Dropping this parameter turns the function into ordinary middleware and
+    // errors stop reaching it, so it is named with a leading underscore to
+    // satisfy the linter rather than removed.
+    _next: express.NextFunction,
+  ): void => {
+    console.error(
+      `unhandled error on ${req.method} ${req.originalUrl}:`,
+      error,
+    );
+    reportError(error, {
+      route: `${req.method} ${req.originalUrl}`,
+      userId: req.auth?.userId,
+    });
+    if (res.headersSent) return;
+    res.status(500).json({ error: "The request could not be completed." });
+  },
+);
+
+// An unhandled rejection that reaches here would otherwise vanish silently.
+process.on("unhandledRejection", (reason) => {
+  console.error("unhandled rejection:", reason);
+  reportError(reason, { route: "process" });
 });
 
 if (process.env.NODE_ENV === "production" && !process.env.GEMINI_API_KEY) {
