@@ -34,10 +34,25 @@ allow-list. The API is its only client.
 
 ## Order of operations
 
-1. **Database.** Create (or restore) the Supabase project, then run
-   `db/migrations/001` through `004` **in order** in the SQL editor. They are
-   idempotent (`if not exists`) and additive. Migration 003 deliberately
-   *refuses* to run if it would discard embeddings of the wrong dimension.
+1. **Database.** Create (or restore) the Supabase project, enable pgvector
+   (`create extension if not exists vector;`), then apply the migrations:
+
+   ```bash
+   cd api && DATABASE_URL='<supabase connection uri>' npm run migrate
+   ```
+
+   The runner applies `db/migrations/*.sql` in order, each in a transaction
+   with the row that records it, and tracks what has already run in
+   `public.schema_migrations` — so it is safe to re-run and it stops if an
+   applied migration has been edited since. Pasting the files into the SQL
+   editor by hand still works; it just has no record of what was applied.
+
+   Do **not** apply `db/local/auth-shim.sql` here — Supabase provides the
+   `auth` schema itself. That file exists only for local PostgreSQL
+   ([docs/local-setup.md](local-setup.md)).
+
+   Migration 003 deliberately *refuses* to run if it would discard embeddings
+   of the wrong dimension.
 2. **Science service.** Deploy `science/` from its `Dockerfile`
    (`uvicorn main:app --host 0.0.0.0 --port 8000`). Note its internal URL.
    Health: `GET /health`.

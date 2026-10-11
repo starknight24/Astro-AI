@@ -152,7 +152,9 @@ cd web && npm ci && npm run dev          # http://localhost:5173
 ```
 
 `docker-compose up` runs `api` + `science` together when you only need the backend
-pair. Full setup notes and gotchas: [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md).
+pair. Running it locally end to end — PostgreSQL, pgvector and real JWT
+verification, with no cloud account: [docs/local-setup.md](docs/local-setup.md).
+Full setup notes and gotchas: [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md).
 
 ### Try the agent without a browser
 
