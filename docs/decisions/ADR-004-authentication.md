@@ -93,7 +93,7 @@ auth is not a latency concern.
   the key set, so a brief outage is survivable, but a cold start during one means
   every request fails. Felt directly during development: when the Supabase project
   became unreachable, no request could be authenticated locally at all — which is
-  why load testing needed `load/local-auth.mjs` to serve a JWKS rather than a
+  why load testing needed `api/scripts/local-auth.mjs` to serve a JWKS rather than a
   bypass flag.
 - **No backstop under a forgotten `WHERE`** (above), mitigated by tests.
 - **Token lifetime is Supabase's to decide**, so revocation is not immediate.

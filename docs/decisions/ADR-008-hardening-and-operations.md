@@ -151,7 +151,7 @@ header and evade its own limit, so it is gated on `NODE_ENV === "production"`.
 ### 7. Load testing: real auth, not a bypass
 
 Measuring the authenticated path needed tokens. Rather than add a test-only auth
-bypass, `load/local-auth.mjs` serves a JWKS and mints an RS256 token, so the
+bypass, `api/scripts/local-auth.mjs` serves a JWKS and mints an RS256 token, so the
 production middleware runs **unmodified**.
 
 A bypass would have measured a code path that does not exist in production and

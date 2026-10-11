@@ -177,7 +177,7 @@ standing control. That is the single biggest remaining gap in this category.
 - Token verification uses `jose` with a remote JWKS; signature, expiry and
   `sub` are all checked, and a token missing `sub` is rejected.
 - **No test-only auth bypass exists.** Load testing needed authenticated
-  requests; rather than adding a bypass flag, `load/local-auth.mjs` serves a
+  requests; rather than adding a bypass flag, `api/scripts/local-auth.mjs` serves a
   JWKS and mints a real RS256 token so the production middleware runs unmodified.
   A bypass would have been a standing invitation to ship it by accident.
 - `upsertUser` failures are logged and ignored, so a database outage degrades to

@@ -20,7 +20,7 @@ optimising 0.06% of an agent request.
 | API | Node 22.23.1, Express, `tsx src/server.ts` |
 | Science | FastAPI + uvicorn, Python 3.14 |
 | Database | **unreachable** (the Supabase project's host is NXDOMAIN) |
-| Auth | real `requireAuth`, verifying against a local JWKS (`load/local-auth.mjs`) |
+| Auth | real `requireAuth`, verifying against a local JWKS (`api/scripts/local-auth.mjs`) |
 
 Two consequences, stated up front because they bound what these numbers mean:
 
@@ -30,7 +30,7 @@ Two consequences, stated up front because they bound what these numbers mean:
    Supabase, i.e. **larger**, not smaller. The rate limiter therefore also fails
    open during these runs, so these numbers do not exercise throttling; that is
    covered by 19 unit tests against real Postgres instead.
-2. **Auth is real, not bypassed.** `load/local-auth.mjs` serves a JWKS and mints
+2. **Auth is real, not bypassed.** `api/scripts/local-auth.mjs` serves a JWKS and mints
    an RS256 token, so `requireAuth` runs unmodified — jose, the JWKS fetch, its
    cache and the signature check. A test-only bypass would have measured a code
    path that does not exist in production.
@@ -245,7 +245,7 @@ measurement showed the infrastructure was never the problem.
 cd science && ./.venv/bin/uvicorn main:app --port 8000 &
 
 # 2. local JWKS + a token (prints the token on stdout)
-cd api && node ../load/local-auth.mjs --ttl 7200 > /tmp/token.txt &
+node api/scripts/local-auth.mjs --ttl 7200 > /tmp/token.txt &
 
 # 3. API against that JWKS
 SUPABASE_URL=http://127.0.0.1:8899 SCIENCE_URL=http://127.0.0.1:8000 \

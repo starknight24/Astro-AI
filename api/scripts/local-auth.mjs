@@ -8,8 +8,8 @@
  * test-only bypass: a bypass would measure a code path that does not exist in
  * production and would be a standing invitation to ship it by accident.
  *
- *   node load/local-auth.mjs            # serves JWKS on :8899, prints a token
- *   node load/local-auth.mjs --port 9000 --ttl 7200
+ *   node api/scripts/local-auth.mjs      # serves JWKS on :8899, prints a token
+ *   node api/scripts/local-auth.mjs --port 9000 --ttl 7200
  *
  * Then:
  *   SUPABASE_URL=http://127.0.0.1:8899 PORT=3101 npx tsx src/server.ts

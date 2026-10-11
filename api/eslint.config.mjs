@@ -6,6 +6,16 @@ export default tseslint.config(
   ...tseslint.configs.recommended,
   { ignores: ['dist/'] },
   {
+    // Plain-JS tooling (scripts/local-auth.mjs) runs on Node directly rather
+    // than through tsx, so it is not covered by the TypeScript config that
+    // supplies these globals. Without this, `process` and `console` are
+    // reported as undefined in a file that is correct.
+    files: ['**/*.mjs', '**/*.js'],
+    languageOptions: {
+      globals: { process: 'readonly', console: 'readonly' },
+    },
+  },
+  {
     rules: {
       // The codebase already marks intentionally-unused parameters with a
       // leading underscore (`_req`, `_res`). The default `args: 'after-used'`
