@@ -12,6 +12,7 @@ import cors from "cors";
 import express from "express";
 import { GoogleGenAI, Type } from "@google/genai";
 import { requireAuth } from "./middleware/auth";
+import { errorHandler } from "./middleware/errorHandler";
 import { RATE_LIMITS, rateLimit } from "./middleware/rateLimit";
 import agentRouter from "./routes/agent";
 import calculateRouter from "./routes/calculate";
@@ -691,30 +692,9 @@ const sentryHandler = sentryErrorHandler();
 if (sentryHandler) app.use(sentryHandler);
 
 // Final safety net: a route that throws without its own try/catch must still
-// return a generic JSON error rather than Express's default HTML stack trace.
-app.use(
-  (
-    error: unknown,
-    req: express.Request,
-    res: express.Response,
-    // Express identifies an error handler by its FOUR-argument signature.
-    // Dropping this parameter turns the function into ordinary middleware and
-    // errors stop reaching it, so it is named with a leading underscore to
-    // satisfy the linter rather than removed.
-    _next: express.NextFunction,
-  ): void => {
-    console.error(
-      `unhandled error on ${req.method} ${req.originalUrl}:`,
-      error,
-    );
-    reportError(error, {
-      route: `${req.method} ${req.originalUrl}`,
-      userId: req.auth?.userId,
-    });
-    if (res.headersSent) return;
-    res.status(500).json({ error: "The request could not be completed." });
-  },
-);
+// return JSON rather than Express's default HTML stack trace. Extracted to
+// ./middleware/errorHandler so it can be tested without booting a listener.
+app.use(errorHandler({ reportError }));
 
 // An unhandled rejection that reaches here would otherwise vanish silently.
 process.on("unhandledRejection", (reason) => {
