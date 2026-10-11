@@ -18,7 +18,7 @@
     "@sentry/node": "^11.2.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
-    "express": "^4.21.2",
+    "express": "^5.2.1",
     "jose": "^6.2.3",
     "pg": "^8.22.0",
     "zod": "^4.4.3"
@@ -27,7 +27,7 @@
     "@electric-sql/pglite": "^0.3.11",
     "@eslint/js": "^9.39.4",
     "@types/cors": "^2.8.17",
-    "@types/express": "^4.17.21",
+    "@types/express": "^5.0.6",
     "@types/node": "^22.14.0",
     "@types/pg": "^8.20.0",
     "@types/supertest": "^7.2.1",
