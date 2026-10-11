@@ -93,9 +93,44 @@ for (const [name, why] of Object.entries(OPTIONAL)) {
   else warn(name, `unset — ${why}`);
 }
 
+/** The project ref in a Supabase URL, e.g. https://abc123.supabase.co -> abc123. */
+function projectRef(url) {
+  const m = /^https?:\/\/([a-z0-9]+)\.supabase\.(co|in)/i.exec(url ?? "");
+  return m ? m[1] : null;
+}
+
 // --------------------------------------------------------------- database
 
 section("database");
+
+// The trap this exists for: SUPABASE_URL moved to a real project while
+// DATABASE_URL still pointed at a local server. Every individual check passes
+// -- the database answers, the JWKS answers -- but tokens are minted for users
+// who do not exist in the database being written to, so `public.users` either
+// violates its foreign key or silently fills with rows for the wrong identity
+// provider. Nothing in the app says so.
+{
+  const ref = projectRef(process.env.SUPABASE_URL);
+  const dbUrl = process.env.DATABASE_URL ?? "";
+  if (ref && dbUrl && !dbUrl.includes(ref)) {
+    fail(
+      "database/auth match",
+      `auth is project '${ref}' but DATABASE_URL does not reference it`,
+      "point DATABASE_URL at that project (Settings → Database → Connection string → URI)",
+    );
+  } else if (ref && dbUrl) {
+    ok("database/auth match", `both are project '${ref}'`);
+  }
+
+  // node-pg uses prepared statements, which transaction pooling does not
+  // support; the symptom is sporadic "prepared statement does not exist".
+  if (/:6543\//.test(dbUrl)) {
+    warn(
+      "pooler port",
+      "6543 is the TRANSACTION pooler — use the session pooler or direct connection",
+    );
+  }
+}
 
 if (!process.env.DATABASE_URL?.trim()) {
   fail("connection", "no DATABASE_URL to try");
