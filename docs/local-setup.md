@@ -25,9 +25,20 @@ with a Postgres you already run:
 
 ```bash
 brew install postgresql@17 pgvector
-echo 'port = 5433' >> /opt/homebrew/var/postgresql@17/postgresql.conf
+
+# Guarded, because a bare `>>` appends a duplicate every time you re-read these
+# instructions. postgresql.conf is last-wins so duplicates are harmless, but
+# they accumulate.
+CONF=/opt/homebrew/var/postgresql@17/postgresql.conf
+grep -q '^port = 5433' "$CONF" || echo 'port = 5433' >> "$CONF"
+
 brew services start postgresql@17
+pg_isready -h 127.0.0.1 -p 5433        # 127.0.0.1:5433 - accepting connections
 ```
+
+If `pg_isready` says no response, check
+`/opt/homebrew/var/log/postgresql@17.log` — the usual cause is another
+postmaster already holding the port.
 
 Create the database and its extensions:
 
