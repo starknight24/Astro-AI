@@ -11,7 +11,8 @@
     "start": "node dist/server.cjs",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
-    "migrate": "node scripts/migrate.mjs"
+    "migrate": "node scripts/migrate.mjs",
+    "doctor": "node scripts/doctor.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
