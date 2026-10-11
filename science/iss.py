@@ -16,6 +16,7 @@ Units: km, seconds, degrees. Times are timezone-aware UTC datetimes.
 from __future__ import annotations
 
 import math
+import ssl
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
@@ -28,6 +29,25 @@ ISS_NORAD_ID = 25544
 # Celestrak's GP query, the canonical public source for ISS elements. No API key.
 TLE_URL = f"https://celestrak.org/NORAD/elements/gp.php?CATNR={ISS_NORAD_ID}&FORMAT=TLE"
 TLE_FETCH_TIMEOUT_S = 8.0
+
+
+def _tls_context() -> ssl.SSLContext:
+    """A verifying TLS context that works off a bundled CA set when there is one.
+
+    Python on macOS does not necessarily have a usable system trust store --
+    a fresh virtualenv fails every HTTPS fetch with CERTIFICATE_VERIFY_FAILED
+    until the interpreter's own cert installer is run. certifi ships with the
+    dependency tree, so prefer it and fall back to the system default rather
+    than making the TLE fetch depend on how the host was set up.
+
+    Verification is never disabled: a silently unverified fetch would make the
+    engine's ground truth attacker-controlled.
+    """
+    try:
+        import certifi
+    except ModuleNotFoundError:
+        return ssl.create_default_context()
+    return ssl.create_default_context(cafile=certifi.where())
 
 # TLEs are refreshed a few times a day and stay usable for days; an hour-long
 # cache keeps Celestrak untouched across a burst of agent calls.
@@ -92,7 +112,9 @@ def fetch_tle(force: bool = False) -> Tle:
         return _tle_cache[0]
     try:
         req = urllib.request.Request(TLE_URL, headers={"User-Agent": "AstroAI/1.0"})
-        with urllib.request.urlopen(req, timeout=TLE_FETCH_TIMEOUT_S) as resp:
+        with urllib.request.urlopen(
+            req, timeout=TLE_FETCH_TIMEOUT_S, context=_tls_context()
+        ) as resp:
             text = resp.read().decode("utf-8", errors="replace")
         tle = parse_tle(text)
     except (urllib.error.URLError, OSError, ValueError) as exc:
