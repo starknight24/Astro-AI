@@ -132,13 +132,25 @@ to a separate origin, so the headers helmet sets (`X-Frame-Options`,
 return. The SPA is served by Vercel, where CSP belongs at the edge. Recorded as
 open rather than silently skipped.
 
-**NOT FIXED — permissive CORS fallback.** `cors({ origin: process.env.WEB_ORIGIN ?? true })`
-allows any origin when `WEB_ORIGIN` is unset. Production sets it, but a
-misconfigured deploy opens up silently, and ADR-001 already records an incident
-caused by this variable. The fix is to require it in production (the same
-fail-fast treatment `GEMINI_API_KEY` gets) — a two-line change, listed as the
-next security task rather than done under a Week 7 deadline so it can be
-deployed deliberately.
+**FIXED (2026-10-11) — permissive CORS fallback.** `cors({ origin: process.env.WEB_ORIGIN ?? true })`
+allowed any origin when `WEB_ORIGIN` was unset. Production set it, but a
+misconfigured deploy opened up silently, and ADR-001 already records an incident
+caused by this variable.
+
+Production now refuses to start without it, alongside the other variables whose
+absence is silent damage rather than an obvious failure:
+
+```
+GEMINI_API_KEY  the agent and RAG answerer cannot run without it
+WEB_ORIGIN      CORS would otherwise reflect any origin
+DATABASE_URL    traces, rate limits and idempotency all need it
+SCIENCE_URL     every physics tool call goes through it
+```
+
+Development still falls back to reflecting any origin, which is deliberate:
+there is no cookie or token on a developer's machine that an attacker's page
+could borrow, and requiring the variable locally would be friction with no
+security gain.
 
 ---
 
@@ -258,7 +270,7 @@ from it, but it is the one place user text crosses a service boundary.
 | A01 | admin metrics would confirm its own existence via 403 | low | **fixed** (404) |
 | A02 | Sentry would have exported request bodies and the NASA key | medium | **fixed** before first deploy |
 | A05 | no `helmet` / CSP | low | **accepted** — JSON-only API; CSP belongs at Vercel's edge |
-| A05 | CORS allows any origin when `WEB_ORIGIN` is unset | medium | **open** — next task; fail fast in production |
+| A05 | CORS allows any origin when `WEB_ORIGIN` is unset | medium | **fixed** — production fails fast without it |
 | A06 | vitest mocker path traversal (dev) | moderate | **accepted** — needs a major bump; exploit requires our own test code |
 | A06 | no `npm audit` in CI, no Dependabot | medium | **open** — largest remaining gap |
 | A09 | no alerting or uptime check | low | **open** |

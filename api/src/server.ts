@@ -26,6 +26,10 @@ const PORT = Number(process.env.PORT) || 3001;
 // this, per-IP rate limiting would bucket every user together.
 if (process.env.NODE_ENV === "production") app.set("trust proxy", 1);
 
+// `?? true` would reflect ANY origin. That is fine for local development,
+// where there is no cookie or token an attacker's page could borrow, but in
+// production it is an open door -- so production refuses to start without an
+// explicit origin (see the startup checks at the bottom of this file).
 app.use(cors({ origin: process.env.WEB_ORIGIN ?? true, credentials: true }));
 // 20 MB is for the image-editing and PDF-upload payloads only; see the per-route
 // limits below. Narrowing the global default is tracked in docs/SECURITY.md.
@@ -702,9 +706,27 @@ process.on("unhandledRejection", (reason) => {
   reportError(reason, { route: "process" });
 });
 
-if (process.env.NODE_ENV === "production" && !process.env.GEMINI_API_KEY) {
-  console.error("GEMINI_API_KEY is required in production.");
-  process.exit(1);
+// Fail fast rather than start in a broken or unsafe configuration. Each of
+// these is silent damage if missing: a misconfigured deploy would otherwise
+// look healthy while serving every origin, or 500 on the first agent request.
+const REQUIRED_IN_PRODUCTION = [
+  ["GEMINI_API_KEY", "the agent and RAG answerer cannot run without it"],
+  [
+    "WEB_ORIGIN",
+    "CORS would otherwise reflect any origin (security-review A05)",
+  ],
+  ["DATABASE_URL", "traces, rate limits and idempotency all need it"],
+  ["SCIENCE_URL", "every physics tool call goes through it"],
+] as const;
+
+if (process.env.NODE_ENV === "production") {
+  const missing = REQUIRED_IN_PRODUCTION.filter(([name]) => !process.env[name]);
+  if (missing.length > 0) {
+    for (const [name, why] of missing) {
+      console.error(`${name} is required in production: ${why}.`);
+    }
+    process.exit(1);
+  }
 }
 
 app.listen(PORT, "0.0.0.0", () => {
