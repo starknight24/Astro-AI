@@ -447,3 +447,34 @@ class TestQuotaIsNotAPhysicsFailure:
         row = grade(case(), agent_result([], status="refused"), None)
         assert row.error is None
         assert summarise([row])["graded"] == 1
+
+
+class _Row:
+    """Minimal stand-in for a result row: observed_model only reads .model."""
+
+    def __init__(self, model):
+        self.model = model
+
+
+def test_observed_model_promotes_what_the_agent_reported():
+    # Regression: the run block recorded `args.model`, which is None unless
+    # --model was passed, so committed results said "(default)" and did not
+    # say what produced them. That is unreproducible, and misleading given
+    # Google aliases one model string onto another at serve time.
+    assert run_physics.observed_model([_Row("gemini-3-flash-preview")] * 3) == (
+        "gemini-3-flash-preview"
+    )
+
+
+def test_observed_model_keeps_every_value_when_a_run_spans_models():
+    rows = [_Row("gemini-3-flash-preview"), _Row("gemini-3.5-flash")]
+    assert run_physics.observed_model(rows) == (
+        "gemini-3-flash-preview, gemini-3.5-flash"
+    )
+
+
+def test_observed_model_is_none_when_nothing_was_recorded():
+    # Every case errored before reaching the model, so there is nothing to
+    # claim. None lets the caller fall back to args.model rather than invent.
+    assert run_physics.observed_model([_Row(None), _Row("")]) is None
+    assert run_physics.observed_model([]) is None

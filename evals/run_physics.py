@@ -402,6 +402,14 @@ def git_sha() -> str:
         return "unknown"
 
 
+def observed_model(rows: list) -> str | None:
+    """The model(s) the agent reported, joined if a run spanned several."""
+    seen = sorted({r.model for r in rows if getattr(r, "model", None)})
+    if not seen:
+        return None
+    return seen[0] if len(seen) == 1 else ", ".join(seen)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--full", action="store_true", help="run all cases")
@@ -457,7 +465,14 @@ def main() -> int:
             "started_at": started.isoformat(timespec="seconds"),
             "finished_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "git_sha": git_sha(),
-            "model": args.model,
+            # The model the agent REPORTS having used, not the one we asked
+            # for. `args.model` is None unless --model was passed, which left
+            # committed results saying "(default)" -- unreproducible, and
+            # actively misleading now that Google aliases one model string onto
+            # another and bills a different quota. Each case records what it
+            # actually ran on; promote that, and keep every distinct value if a
+            # run somehow spanned more than one.
+            "model": observed_model(rows) or args.model,
             "prompt_version": next((r.prompt_version for r in rows if r.prompt_version), None),
             "dataset": DATASET.name,
             "dataset_size": len(cases),

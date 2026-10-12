@@ -17,7 +17,7 @@ on:
 # Two tiers, split by what they cost.
 #
 # On every PR: the parts that need no API quota at all — dataset integrity and
-# the grading logic. 46 pure-function tests, a few seconds.
+# the grading logic. 63 pure-function tests, a few seconds.
 #
 # On demand: the parts that call a model. Gemini's free tier allows 20
 # generateContent requests per day PER MODEL (measured), and a 15-question
