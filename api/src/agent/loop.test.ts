@@ -751,6 +751,37 @@ describe("numeric grounding", () => {
     ).toEqual([4242.42]);
   });
 
+  it("does not flag a value that was a tool ARGUMENT", async () => {
+    // Regression: reporting the altitude the question itself supplied came
+    // back as "could not be matched to a tool result", so a correct answer
+    // carried a fabrication warning. An argument the engine computed from is
+    // grounded.
+    const echoesInput = {
+      ...GOOD_ANSWER,
+      // Only the echoed argument, so the assertion isolates it from any
+      // question about whether the computed period matched a tool result.
+      quantities: [{ quantity: "altitude", value: 550, unit: "km" }],
+    };
+    const client = fakeClient([
+      { json: IN_DOMAIN_PLAN },
+      {
+        calls: [
+          {
+            name: "orbital_calculator",
+            args: { operation: "period", altitude_km: 550 },
+          },
+        ],
+      },
+      { text: "done" },
+      { json: echoesInput },
+    ]);
+    const result = await runAgent({ problem: "Period at 550 km?", client });
+    expect(result.meta.guardrails_triggered).not.toContain("ungrounded_values");
+    expect(result.answer.caveats?.join(" ") ?? "").not.toContain(
+      "Grounding check",
+    );
+  });
+
   it("does not flag an exact unit conversion of a tool value", async () => {
     const converted = {
       ...GOOD_ANSWER,

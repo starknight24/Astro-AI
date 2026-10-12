@@ -734,9 +734,15 @@ export async function runAgent(options: RunAgentOptions): Promise<AgentResult> {
     answer.quantities ??= [];
 
     // Advisory: did every number come from a tool?
+    // The whole entry, not just `.result`: a validated tool ARGUMENT is as
+    // grounded as a tool result. It is either a number the user wrote or one
+    // the engine was asked to compute from, and in both cases the model did
+    // not invent it. Passing results alone reported the question's own
+    // altitude back as "model-derived", which puts a fabrication warning on a
+    // correct answer and teaches the reader to ignore the warning.
     const { ungrounded } = verifyNumericGrounding(
       answer.quantities.map((q) => q.value),
-      collectedResults.map((e) => (e as { result: unknown }).result),
+      collectedResults,
     );
     if (ungrounded.length > 0) {
       noteGuardrail("ungrounded_values");
