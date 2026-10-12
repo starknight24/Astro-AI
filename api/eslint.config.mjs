@@ -12,7 +12,17 @@ export default tseslint.config(
     // reported as undefined in a file that is correct.
     files: ['**/*.mjs', '**/*.js'],
     languageOptions: {
-      globals: { process: 'readonly', console: 'readonly' },
+      globals: {
+        process: 'readonly',
+        console: 'readonly',
+        fetch: 'readonly',
+        URL: 'readonly',
+        AbortController: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+      },
     },
   },
   {

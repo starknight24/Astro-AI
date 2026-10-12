@@ -19,6 +19,17 @@ import calculateRouter from "./routes/calculate";
 import metricsRouter from "./routes/metrics";
 import papersRouter from "./routes/papers";
 
+// The model these legacy routes use. Configurable because the string in the
+// code is not the model you get: Google aliases `gemini-3.5-flash` onto
+// `gemini-3.6-flash` server-side and bills it to THAT model's daily quota, so
+// when 3.6 is exhausted every one of these routes fails with a 429 naming a
+// model that appears nowhere in this file. Being able to repoint them without
+// a code change is the difference between a five-second fix and a dead demo.
+const CHAT_MODEL =
+  process.env.CHAT_MODEL?.trim() ||
+  process.env.AGENT_MODEL?.trim() ||
+  "gemini-3.5-flash";
+
 const app = express();
 const PORT = Number(process.env.PORT) || 3001;
 
@@ -142,7 +153,7 @@ Always be encouraging, precise, and educational. When helpful, cite Kepler's Law
 
     // Generate content using gemini-3.5-flash as specified
     const response = await client.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: CHAT_MODEL,
       contents: [...chatHistory, { role: "user", parts: [{ text: message }] }],
       config: {
         systemInstruction,
@@ -191,7 +202,7 @@ Format the response strictly as a JSON array of objects with the fields:
 Generate the response in valid JSON.`;
 
     const response = await client.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: CHAT_MODEL,
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -247,7 +258,7 @@ Format the output as a JSON array of objects, with each object containing:
 - "explanation": a detailed explanation explaining why the correct answer is right and why the others are wrong (using LaTeX equations where helpful).`;
 
     const response = await client.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: CHAT_MODEL,
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -310,7 +321,7 @@ Format the response strictly as a JSON object with fields:
 }`;
 
     const response = await client.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: CHAT_MODEL,
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -382,7 +393,7 @@ Format the response strictly as a JSON object with keys:
 }`;
 
     const response = await client.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: CHAT_MODEL,
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -447,7 +458,7 @@ When answering questions:
     }));
 
     const response = await client.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: CHAT_MODEL,
       contents: [...chatHistory, { role: "user", parts: [{ text: message }] }],
       config: {
         systemInstruction,
@@ -653,7 +664,7 @@ Format the response strictly as a JSON object with fields:
 }`;
 
     const response = await client.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: CHAT_MODEL,
       contents: prompt,
       config: {
         responseMimeType: "application/json",
